@@ -15,7 +15,8 @@ Thumbs.db
 
 # IDEs and editors
 .gradle
-.idea/
+.idea/**
+!.idea/icon.svg
 *.iml
 /build
 /captures
