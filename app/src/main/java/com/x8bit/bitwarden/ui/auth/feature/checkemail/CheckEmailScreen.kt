@@ -15,7 +15,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -150,8 +149,8 @@ private fun CheckEmailContent(
         Text(
             text = stringResource(id = R.string.check_your_email),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.titleMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .wrapContentHeight()
@@ -166,8 +165,8 @@ private fun CheckEmailContent(
             ),
             highlights = listOf(email),
             highlightStyle = SpanStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                color = BitwardenTheme.colorScheme.text.primary,
+                fontSize = BitwardenTheme.typography.bodyMedium.fontSize,
                 fontWeight = FontWeight.Bold,
             ),
             tag = "EMAIL",
@@ -175,7 +174,7 @@ private fun CheckEmailContent(
         Text(
             text = descriptionAnnotatedString,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyMedium,
+            style = BitwardenTheme.typography.bodyMedium,
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .fillMaxWidth()
@@ -185,8 +184,8 @@ private fun CheckEmailContent(
         @Suppress("MaxLineLength")
         Text(
             text = stringResource(R.string.select_the_link_in_the_email_to_verify_your_email_address_and_continue_creating_your_account),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(horizontal = 8.dp)
@@ -226,7 +225,7 @@ private fun CheckEmailLegacyContent(
         Spacer(modifier = Modifier.height(32.dp))
         Image(
             painter = rememberVectorPainter(id = R.drawable.email_check),
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+            colorFilter = ColorFilter.tint(BitwardenTheme.colorScheme.icon.secondary),
             contentDescription = null,
             contentScale = ContentScale.FillHeight,
             modifier = Modifier
@@ -238,8 +237,8 @@ private fun CheckEmailLegacyContent(
         Text(
             text = stringResource(id = R.string.check_your_email),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.headlineSmall,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .padding(horizontal = 24.dp)
                 .wrapContentHeight()
@@ -255,8 +254,8 @@ private fun CheckEmailLegacyContent(
             ),
             highlights = listOf(email),
             highlightStyle = SpanStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                color = BitwardenTheme.colorScheme.text.primary,
+                fontSize = BitwardenTheme.typography.bodyMedium.fontSize,
                 fontWeight = FontWeight.Bold,
             ),
             tag = "EMAIL",

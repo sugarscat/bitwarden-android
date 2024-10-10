@@ -4,10 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,10 +20,9 @@ import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.withLineBreaksAtWidth
 import com.x8bit.bitwarden.ui.platform.base.util.withVisualTransformation
+import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconButton
 import com.x8bit.bitwarden.ui.platform.components.util.nonLetterColorVisualTransformation
-import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
-import com.x8bit.bitwarden.ui.platform.theme.LocalNonMaterialTypography
 
 /**
  * A composable function for displaying a password history list item.
@@ -52,7 +47,7 @@ fun PasswordHistoryListItem(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             var widthPx by remember(label) { mutableIntStateOf(0) }
-            val textStyle = LocalNonMaterialTypography.current.sensitiveInfoMedium
+            val textStyle = BitwardenTheme.typography.sensitiveInfoMedium
             val formattedText = label.withLineBreaksAtWidth(
                 widthPx = widthPx.toFloat(),
                 monospacedTextStyle = textStyle,
@@ -62,7 +57,7 @@ fun PasswordHistoryListItem(
                     visualTransformation = nonLetterColorVisualTransformation(),
                 ),
                 style = textStyle,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = BitwardenTheme.colorScheme.text.primary,
                 modifier = Modifier
                     .testTag("GeneratedPasswordValue")
                     .fillMaxWidth()
@@ -71,24 +66,19 @@ fun PasswordHistoryListItem(
 
             Text(
                 text = supportingLabel,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = BitwardenTheme.typography.bodyMedium,
+                color = BitwardenTheme.colorScheme.text.secondary,
                 modifier = Modifier.testTag("GeneratedPasswordDateLabel"),
             )
         }
 
-        IconButton(
+        BitwardenStandardIconButton(
+            vectorIconRes = R.drawable.ic_copy,
+            contentDescription = stringResource(id = R.string.copy),
             onClick = onCopyClick,
-            colors = IconButtonDefaults.iconButtonColors(
-                contentColor = MaterialTheme.colorScheme.primary,
-            ),
-            modifier = Modifier.testTag("CopyPasswordValueButton"),
-        ) {
-            Icon(
-                painter = rememberVectorPainter(id = R.drawable.ic_copy),
-                contentDescription = stringResource(id = R.string.copy),
-            )
-        }
+            contentColor = BitwardenTheme.colorScheme.icon.primary,
+            modifier = Modifier.testTag(tag = "CopyPasswordValueButton"),
+        )
     }
 }
 

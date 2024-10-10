@@ -22,7 +22,6 @@ import com.x8bit.bitwarden.data.auth.repository.util.WebAuthResult
 import com.x8bit.bitwarden.data.auth.repository.util.generateUriForCaptcha
 import com.x8bit.bitwarden.data.auth.repository.util.generateUriForWebAuth
 import com.x8bit.bitwarden.data.auth.util.YubiKeyResult
-import com.x8bit.bitwarden.data.platform.datasource.network.util.base64UrlDecodeOrNull
 import com.x8bit.bitwarden.data.platform.repository.EnvironmentRepository
 import com.x8bit.bitwarden.data.platform.repository.util.baseWebVaultUrlOrDefault
 import com.x8bit.bitwarden.ui.auth.feature.twofactorlogin.util.button
@@ -72,7 +71,8 @@ class TwoFactorLoginViewModel @Inject constructor(
                 isRememberMeEnabled = false,
                 captchaToken = null,
                 email = args.emailAddress,
-                password = args.base64EncodedPassword?.base64UrlDecodeOrNull(),
+                password = args.password,
+                orgIdentifier = args.orgIdentifier,
             )
         },
 ) {
@@ -203,14 +203,21 @@ class TwoFactorLoginViewModel @Inject constructor(
         when (state.authMethod) {
             TwoFactorAuthMethod.DUO,
             TwoFactorAuthMethod.DUO_ORGANIZATION,
-            -> {
+                -> {
                 val authUrl = authRepository.twoFactorResponse.twoFactorDuoAuthUrl
                 // The url should not be empty unless the environment is somehow not supported.
-                sendEvent(
-                    event = authUrl
-                        ?.let { TwoFactorLoginEvent.NavigateToDuo(uri = Uri.parse(it)) }
-                        ?: TwoFactorLoginEvent.ShowToast(R.string.generic_error_message.asText()),
-                )
+                authUrl
+                    ?.let {
+                        sendEvent(event = TwoFactorLoginEvent.NavigateToDuo(uri = Uri.parse(it)))
+                    }
+                    ?: mutableStateFlow.update {
+                        it.copy(
+                            dialogState = TwoFactorLoginState.DialogState.Error(
+                                title = R.string.an_error_has_occurred.asText(),
+                                message = R.string.error_connecting_with_the_duo_service_use_a_different_two_step_login_method_or_contact_duo_for_assistance.asText(),
+                            ),
+                        )
+                    }
             }
 
             TwoFactorAuthMethod.WEB_AUTH -> {
@@ -250,7 +257,7 @@ class TwoFactorLoginViewModel @Inject constructor(
             TwoFactorAuthMethod.U2F,
             TwoFactorAuthMethod.REMEMBER,
             TwoFactorAuthMethod.RECOVERY_CODE,
-            -> initiateLogin()
+                -> initiateLogin()
         }
     }
 
@@ -480,7 +487,7 @@ class TwoFactorLoginViewModel @Inject constructor(
             TwoFactorAuthMethod.REMEMBER,
             TwoFactorAuthMethod.DUO_ORGANIZATION,
             TwoFactorAuthMethod.WEB_AUTH,
-            -> {
+                -> {
                 updateAuthMethodRelatedState(action.authMethod)
             }
         }
@@ -511,7 +518,7 @@ class TwoFactorLoginViewModel @Inject constructor(
         val code = when (state.authMethod) {
             TwoFactorAuthMethod.AUTHENTICATOR_APP,
             TwoFactorAuthMethod.EMAIL,
-            -> state.codeInput.replace(" ", "")
+                -> state.codeInput.replace(" ", "")
 
             TwoFactorAuthMethod.DUO,
             TwoFactorAuthMethod.DUO_ORGANIZATION,
@@ -520,7 +527,7 @@ class TwoFactorLoginViewModel @Inject constructor(
             TwoFactorAuthMethod.REMEMBER,
             TwoFactorAuthMethod.WEB_AUTH,
             TwoFactorAuthMethod.RECOVERY_CODE,
-            -> state.codeInput
+                -> state.codeInput
         }
 
         viewModelScope.launch {
@@ -533,6 +540,7 @@ class TwoFactorLoginViewModel @Inject constructor(
                     remember = state.isRememberMeEnabled,
                 ),
                 captchaToken = state.captchaToken,
+                orgIdentifier = state.orgIdentifier,
             )
             sendAction(
                 TwoFactorLoginAction.Internal.ReceiveLoginResult(
@@ -559,6 +567,7 @@ data class TwoFactorLoginState(
     val captchaToken: String?,
     val email: String,
     val password: String?,
+    val orgIdentifier: String?,
 ) : Parcelable {
 
     /**

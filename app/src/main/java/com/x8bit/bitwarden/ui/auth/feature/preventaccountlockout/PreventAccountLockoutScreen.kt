@@ -15,9 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -37,6 +35,7 @@ import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.EventsEffect
 import com.x8bit.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
+import com.x8bit.bitwarden.ui.platform.components.divider.BitwardenHorizontalDivider
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
@@ -97,14 +96,13 @@ private fun NeverLoseAccessContent(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(size = 4.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+            .background(BitwardenTheme.colorScheme.background.tertiary),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = stringResource(R.string.never_lose_access_to_your_vault),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-
+            style = BitwardenTheme.typography.titleMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier.padding(horizontal = 24.dp),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -112,12 +110,12 @@ private fun NeverLoseAccessContent(
             text = stringResource(
                 R.string.the_best_way_to_make_sure_you_can_always_access_your_account,
             ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier.padding(horizontal = 24.dp),
         )
         Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        BitwardenHorizontalDivider()
         Spacer(modifier = Modifier.height(16.dp))
         AccountRecoveryTipRow(
             title = stringResource(R.string.create_a_hint),
@@ -128,12 +126,12 @@ private fun NeverLoseAccessContent(
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        BitwardenHorizontalDivider()
         Spacer(modifier = Modifier.height(16.dp))
         AccountRecoveryTipRow(
             title = stringResource(R.string.write_your_password_down),
             description = stringResource(R.string.keep_it_secret_keep_it_safe),
-            icon = rememberVectorPainter(id = R.drawable.ic_edit),
+            icon = rememberVectorPainter(id = R.drawable.ic_pencil),
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -154,7 +152,7 @@ private fun AccountRecoveryTipRow(
         Icon(
             painter = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = BitwardenTheme.colorScheme.icon.primary,
             modifier = Modifier
                 .size(32.dp)
                 .clearAndSetSemantics { },
@@ -163,14 +161,14 @@ private fun AccountRecoveryTipRow(
         Column {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.titleSmall,
+                color = BitwardenTheme.colorScheme.text.primary,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = BitwardenTheme.typography.bodyMedium,
+                color = BitwardenTheme.colorScheme.text.primary,
             )
         }
     }

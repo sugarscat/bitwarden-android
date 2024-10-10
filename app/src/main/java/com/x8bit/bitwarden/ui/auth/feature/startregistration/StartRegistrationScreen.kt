@@ -21,9 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -68,12 +65,14 @@ import com.x8bit.bitwarden.ui.platform.base.util.createAnnotatedString
 import com.x8bit.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenFilledButton
+import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconButton
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenBasicDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenLoadingDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.LoadingDialogState
 import com.x8bit.bitwarden.ui.platform.components.dropdown.EnvironmentSelector
 import com.x8bit.bitwarden.ui.platform.components.field.BitwardenTextField
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
+import com.x8bit.bitwarden.ui.platform.components.toggle.color.bitwardenSwitchColors
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.composition.LocalIntentManager
 import com.x8bit.bitwarden.ui.platform.manager.intent.IntentManager
@@ -264,18 +263,14 @@ private fun StartRegistrationContent(
                     .testTag("RegionSelectorDropdown"),
             )
             if (isNewOnboardingUiEnabled) {
-                IconButton(
+                BitwardenStandardIconButton(
+                    vectorIconRes = R.drawable.ic_question_circle_small,
+                    contentDescription = stringResource(R.string.help_with_server_geolocations),
                     onClick = handler.onServerGeologyHelpClick,
+                    contentColor = BitwardenTheme.colorScheme.icon.secondary,
                     // Align with design but keep accessible touch target of IconButton.
                     modifier = Modifier.offset(y = (-8f).dp, x = 16.dp),
-                ) {
-                    Icon(
-                        painter = rememberVectorPainter(id = R.drawable.ic_tooltip_small),
-                        contentDescription = stringResource(R.string.help_with_server_geolocations),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
+                )
             }
         }
         Spacer(modifier = Modifier.height(24.dp))
@@ -329,16 +324,16 @@ private fun TermsAndPrivacyText(
         append(strTermsAndPrivacy)
         addStyle(
             style = SpanStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                color = BitwardenTheme.colorScheme.text.primary,
+                fontSize = BitwardenTheme.typography.bodyMedium.fontSize,
             ),
             start = 0,
             end = strTermsAndPrivacy.length,
         )
         addStyle(
             style = SpanStyle(
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                color = BitwardenTheme.colorScheme.text.interaction,
+                fontSize = BitwardenTheme.typography.bodyMedium.fontSize,
                 fontWeight = FontWeight.Bold,
             ),
             start = startIndexTerms,
@@ -346,8 +341,8 @@ private fun TermsAndPrivacyText(
         )
         addStyle(
             style = SpanStyle(
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                color = BitwardenTheme.colorScheme.text.interaction,
+                fontSize = BitwardenTheme.typography.bodyMedium.fontSize,
                 fontWeight = FontWeight.Bold,
             ),
             start = startIndexPrivacy,
@@ -395,7 +390,7 @@ private fun TermsAndPrivacyText(
         val termsUrl = stringResource(id = R.string.terms_of_service)
         ClickableText(
             text = annotatedLinkString,
-            style = MaterialTheme.typography.bodyMedium.copy(
+            style = BitwardenTheme.typography.bodyMedium.copy(
                 textAlign = TextAlign.Center,
             ),
             onClick = {
@@ -425,9 +420,14 @@ private fun ReceiveMarketingEmailsSwitch(
 
     @Suppress("MaxLineLength")
     val annotatedLinkString = createAnnotatedString(
-        mainString = stringResource(id = R.string.get_advice_announcements_and_research_opportunities_from_bitwarden_in_your_inbox_unsubscribe_any_time),
+        mainString = stringResource(id = R.string.get_emails_from_bitwarden_for_announcements_advices_and_research_opportunities_unsubscribe_any_time),
         highlights = listOf(unsubscribeString),
         tag = TAG_URL,
+        highlightStyle = SpanStyle(
+            color = BitwardenTheme.colorScheme.text.interaction,
+            fontSize = BitwardenTheme.typography.bodyMedium.fontSize,
+            fontWeight = FontWeight.Bold,
+        ),
     )
     Row(
         horizontalArrangement = Arrangement.Start,
@@ -448,7 +448,9 @@ private fun ReceiveMarketingEmailsSwitch(
             }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 onClick = { onCheckedChange.invoke(!isChecked) },
             )
             .fillMaxWidth(),
@@ -459,11 +461,12 @@ private fun ReceiveMarketingEmailsSwitch(
                 .width(52.dp),
             checked = isChecked,
             onCheckedChange = null,
+            colors = bitwardenSwitchColors(),
         )
         Spacer(modifier = Modifier.width(16.dp))
         ClickableText(
             text = annotatedLinkString,
-            style = MaterialTheme.typography.bodyMedium,
+            style = BitwardenTheme.typography.bodyMedium,
             onClick = {
                 annotatedLinkString
                     .getStringAnnotations(TAG_URL, it, it)

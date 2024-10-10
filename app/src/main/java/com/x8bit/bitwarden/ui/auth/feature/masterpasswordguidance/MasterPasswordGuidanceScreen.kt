@@ -14,9 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -36,7 +34,8 @@ import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.EventsEffect
 import com.x8bit.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
-import com.x8bit.bitwarden.ui.platform.components.card.BitwardenActionCard
+import com.x8bit.bitwarden.ui.platform.components.card.BitwardenActionCardSmall
+import com.x8bit.bitwarden.ui.platform.components.divider.BitwardenHorizontalDivider
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
@@ -93,7 +92,7 @@ fun MasterPasswordGuidanceScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(size = 4.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+                    .background(BitwardenTheme.colorScheme.background.tertiary),
             ) {
                 Column(
                     modifier = Modifier
@@ -103,19 +102,19 @@ fun MasterPasswordGuidanceScreen(
 
                     Text(
                         text = stringResource(R.string.what_makes_a_password_strong),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = BitwardenTheme.typography.titleMedium,
+                        color = BitwardenTheme.colorScheme.text.primary,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = BitwardenTheme.typography.bodyMedium,
+                        color = BitwardenTheme.colorScheme.text.primary,
                         text = stringResource(
                             R.string.the_longer_your_password_the_more_difficult_to_hack,
                         ),
                     )
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                BitwardenHorizontalDivider()
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -123,8 +122,8 @@ fun MasterPasswordGuidanceScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.the_strongest_passwords_are_usually),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = BitwardenTheme.typography.titleSmall,
+                        color = BitwardenTheme.colorScheme.text.primary,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     BulletTextRow(text = stringResource(R.string.twelve_or_more_characters))
@@ -158,7 +157,7 @@ private fun TryGeneratorCard(
     onCardClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    BitwardenActionCard(
+    BitwardenActionCardSmall(
         actionIcon = rememberVectorPainter(id = R.drawable.ic_generator),
         actionText = stringResource(
             R.string.use_the_generator_to_create_a_strong_unique_password,
@@ -169,9 +168,9 @@ private fun TryGeneratorCard(
             .fillMaxWidth(),
         trailingContent = {
             Icon(
-                painter = rememberVectorPainter(id = R.drawable.ic_navigate_next),
+                painter = rememberVectorPainter(id = R.drawable.ic_chevron_right),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = BitwardenTheme.colorScheme.icon.primary,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .size(16.dp),
@@ -193,14 +192,14 @@ private fun BulletTextRow(
         Text(
             text = BULLET_TWO_TAB,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier.clearAndSetSemantics { },
         )
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
         )
     }
 }

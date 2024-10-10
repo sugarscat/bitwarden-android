@@ -15,9 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -43,6 +41,7 @@ import com.x8bit.bitwarden.ui.platform.base.util.EventsEffect
 import com.x8bit.bitwarden.ui.platform.base.util.Text
 import com.x8bit.bitwarden.ui.platform.base.util.asText
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
+import com.x8bit.bitwarden.ui.platform.components.divider.BitwardenHorizontalDivider
 import com.x8bit.bitwarden.ui.platform.components.row.BitwardenExternalLinkRow
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.toggle.BitwardenWideSwitch
@@ -230,8 +229,8 @@ private fun ContentColumn(
             Text(
                 modifier = Modifier.padding(end = 16.dp),
                 text = state.copyrightInfo.invoke(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.bodySmall,
+                color = BitwardenTheme.colorScheme.text.primary,
             )
         }
     }
@@ -249,7 +248,9 @@ private fun CopyRow(
         modifier = modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 onClick = onClick,
             )
             .semantics(mergeDescendants = true) {
@@ -269,20 +270,16 @@ private fun CopyRow(
                     .padding(end = 16.dp)
                     .weight(1f),
                 text = text(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.bodySmall,
+                color = BitwardenTheme.colorScheme.text.primary,
             )
             Icon(
                 painter = rememberVectorPainter(id = R.drawable.ic_copy),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = BitwardenTheme.colorScheme.icon.primary,
             )
         }
-        HorizontalDivider(
-            modifier = Modifier.padding(start = 16.dp),
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant,
-        )
+        BitwardenHorizontalDivider(modifier = Modifier.padding(start = 16.dp))
     }
 }
 

@@ -7,13 +7,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,9 +26,10 @@ import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.bottomDivider
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenFilledTonalButton
+import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconButton
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenTwoButtonDialog
 import com.x8bit.bitwarden.ui.platform.components.header.BitwardenListHeaderText
-import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.ui.vault.feature.attachments.handlers.AttachmentsHandlers
 
 /**
@@ -51,8 +48,8 @@ fun AttachmentsContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(id = R.string.no_attachments),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = BitwardenTheme.typography.bodyMedium,
+                    color = BitwardenTheme.colorScheme.text.primary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .testTag("NoAttachmentsLabel")
@@ -90,8 +87,8 @@ fun AttachmentsContent(
                     .newAttachment
                     ?.displayName
                     ?: stringResource(id = R.string.no_file_chosen),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
+                color = BitwardenTheme.colorScheme.text.secondary,
+                style = BitwardenTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -111,8 +108,8 @@ fun AttachmentsContent(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(id = R.string.max_file_size),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
+                color = BitwardenTheme.colorScheme.text.secondary,
+                style = BitwardenTheme.typography.bodySmall,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 32.dp),
@@ -149,10 +146,7 @@ private fun AttachmentListEntry(
 
     Row(
         modifier = Modifier
-            .bottomDivider(
-                paddingStart = 16.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
+            .bottomDivider(paddingStart = 16.dp)
             .defaultMinSize(minHeight = 56.dp)
             .testTag("AttachmentRow")
             .padding(vertical = 8.dp)
@@ -161,8 +155,8 @@ private fun AttachmentListEntry(
     ) {
         Text(
             text = attachmentItem.title,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
+            style = BitwardenTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -172,23 +166,17 @@ private fun AttachmentListEntry(
 
         Text(
             text = attachmentItem.displaySize,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall,
+            color = BitwardenTheme.colorScheme.text.primary,
+            style = BitwardenTheme.typography.labelSmall,
             modifier = Modifier,
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        IconButton(
+        BitwardenStandardIconButton(
+            vectorIconRes = R.drawable.ic_trash,
+            contentDescription = stringResource(id = R.string.delete),
             onClick = { shouldShowDeleteDialog = true },
-            modifier = Modifier,
-        ) {
-            Icon(
-                painter = rememberVectorPainter(id = R.drawable.ic_trash),
-                contentDescription = stringResource(id = R.string.delete),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        )
     }
 }

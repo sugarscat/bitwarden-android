@@ -1,6 +1,7 @@
 package com.x8bit.bitwarden.ui.platform.feature.settings.accountsecurity
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -36,8 +36,13 @@ import com.x8bit.bitwarden.data.platform.repository.model.VaultTimeoutAction
 import com.x8bit.bitwarden.ui.platform.base.util.EventsEffect
 import com.x8bit.bitwarden.ui.platform.base.util.Text
 import com.x8bit.bitwarden.ui.platform.base.util.asText
+import com.x8bit.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
+import com.x8bit.bitwarden.ui.platform.components.badge.NotificationBadge
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenTextButton
+import com.x8bit.bitwarden.ui.platform.components.card.BitwardenActionCard
+import com.x8bit.bitwarden.ui.platform.components.card.BitwardenInfoCalloutCard
+import com.x8bit.bitwarden.ui.platform.components.card.actionCardExitAnimation
 import com.x8bit.bitwarden.ui.platform.components.dialog.BasicDialogState
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenBasicDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenLoadingDialog
@@ -51,7 +56,6 @@ import com.x8bit.bitwarden.ui.platform.components.header.BitwardenListHeaderText
 import com.x8bit.bitwarden.ui.platform.components.row.BitwardenExternalLinkRow
 import com.x8bit.bitwarden.ui.platform.components.row.BitwardenTextRow
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
-import com.x8bit.bitwarden.ui.platform.components.text.BitwardenPolicyWarningText
 import com.x8bit.bitwarden.ui.platform.components.toggle.BitwardenUnlockWithBiometricsSwitch
 import com.x8bit.bitwarden.ui.platform.components.toggle.BitwardenUnlockWithPinSwitch
 import com.x8bit.bitwarden.ui.platform.components.toggle.BitwardenWideSwitch
@@ -60,8 +64,7 @@ import com.x8bit.bitwarden.ui.platform.composition.LocalBiometricsManager
 import com.x8bit.bitwarden.ui.platform.composition.LocalIntentManager
 import com.x8bit.bitwarden.ui.platform.manager.biometrics.BiometricsManager
 import com.x8bit.bitwarden.ui.platform.manager.intent.IntentManager
-import com.x8bit.bitwarden.ui.platform.theme.LocalNonMaterialColors
-import com.x8bit.bitwarden.ui.platform.theme.LocalNonMaterialTypography
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.ui.platform.util.displayLabel
 import com.x8bit.bitwarden.ui.platform.util.minutes
 import com.x8bit.bitwarden.ui.platform.util.toFormattedPattern
@@ -79,6 +82,7 @@ fun AccountSecurityScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDeleteAccount: () -> Unit,
     onNavigateToPendingRequests: () -> Unit,
+    onNavigateToSetupUnlockScreen: () -> Unit,
     viewModel: AccountSecurityViewModel = hiltViewModel(),
     biometricsManager: BiometricsManager = LocalBiometricsManager.current,
     intentManager: IntentManager = LocalIntentManager.current,
@@ -137,6 +141,8 @@ fun AccountSecurityScreen(
             is AccountSecurityEvent.ShowToast -> {
                 Toast.makeText(context, event.text(resources), Toast.LENGTH_SHORT).show()
             }
+
+            AccountSecurityEvent.NavigateToSetupUnlockScreen -> onNavigateToSetupUnlockScreen()
         }
     }
 
@@ -175,6 +181,33 @@ fun AccountSecurityScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
+            AnimatedVisibility(
+                visible = state.shouldShowUnlockActionCard,
+                label = "UnlockActionCard",
+                exit = actionCardExitAnimation(),
+            ) {
+                BitwardenActionCard(
+                    cardTitle = stringResource(id = R.string.set_up_unlock),
+                    actionText = stringResource(R.string.get_started),
+                    onActionClick = remember(viewModel) {
+                        {
+                            viewModel.trySendAction(AccountSecurityAction.UnlockActionCardCtaClick)
+                        }
+                    },
+                    onDismissClick = remember(viewModel) {
+                        {
+                            viewModel.trySendAction(AccountSecurityAction.UnlockActionCardDismiss)
+                        }
+                    },
+                    leadingContent = {
+                        NotificationBadge(notificationCount = 1)
+                    },
+                    modifier = Modifier
+                        .standardHorizontalMargin()
+                        .padding(top = 12.dp, bottom = 16.dp),
+                )
+            }
+
             BitwardenListHeaderText(
                 label = stringResource(id = R.string.approve_login_requests),
                 modifier = Modifier
@@ -429,7 +462,7 @@ private fun SessionTimeoutPolicyRow(
             R.string.vault_timeout_policy_with_action_in_effect.asText(hours, minutes, action)
         }
 
-        BitwardenPolicyWarningText(
+        BitwardenInfoCalloutCard(
             text = policyText(),
             modifier = modifier,
         )
@@ -453,8 +486,8 @@ private fun SessionTimeoutRow(
     ) {
         Text(
             text = selectedVaultTimeoutType.displayLabel(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.labelSmall,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier.testTag("SessionTimeoutStatusLabel"),
         )
     }
@@ -529,8 +562,8 @@ private fun SessionCustomTimeoutRow(
             .toFormattedPattern("HH:mm")
         Text(
             text = formattedTime,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.labelSmall,
+            color = BitwardenTheme.colorScheme.text.primary,
         )
     }
 
@@ -606,10 +639,12 @@ private fun SessionTimeoutActionRow(
     ) {
         Text(
             text = selectedVaultTimeoutAction.displayLabel(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                alpha = if (isEnabled) 1.0f else 0.38f,
-            ),
+            style = BitwardenTheme.typography.labelSmall,
+            color = if (isEnabled) {
+                BitwardenTheme.colorScheme.text.primary
+            } else {
+                BitwardenTheme.colorScheme.filledButton.foregroundDisabled
+            },
             modifier = Modifier.testTag("SessionTimeoutActionStatusLabel"),
         )
     }
@@ -703,8 +738,8 @@ private fun FingerPrintPhraseDialog(
         title = {
             Text(
                 text = stringResource(id = R.string.fingerprint_phrase),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.headlineSmall,
+                color = BitwardenTheme.colorScheme.text.primary,
+                style = BitwardenTheme.typography.headlineSmall,
                 modifier = Modifier.fillMaxWidth(),
             )
         },
@@ -712,19 +747,22 @@ private fun FingerPrintPhraseDialog(
             Column {
                 Text(
                     text = "${stringResource(id = R.string.your_accounts_fingerprint)}:",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
+                    color = BitwardenTheme.colorScheme.text.primary,
+                    style = BitwardenTheme.typography.bodyMedium,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = fingerprintPhrase(),
-                    color = LocalNonMaterialColors.current.fingerprint,
-                    style = LocalNonMaterialTypography.current.sensitiveInfoSmall,
+                    color = BitwardenTheme.colorScheme.text.codePink,
+                    style = BitwardenTheme.typography.sensitiveInfoSmall,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        containerColor = BitwardenTheme.colorScheme.background.primary,
+        iconContentColor = BitwardenTheme.colorScheme.icon.secondary,
+        titleContentColor = BitwardenTheme.colorScheme.text.primary,
+        textContentColor = BitwardenTheme.colorScheme.text.primary,
     )
 }

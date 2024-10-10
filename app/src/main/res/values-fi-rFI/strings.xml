@@ -50,6 +50,7 @@
   <string name="account_already_added">Tili on jo lisätty</string>
   <string name="switch_to_already_added_account_confirmation">Haluatko vaihtaa siihen nyt?</string>
   <string name="master_password">Pääsalasana</string>
+  <string name="master_password_required">Pääsalasana (pakollinen)</string>
   <string name="more">Lisää</string>
   <string name="my_vault">Oma holvi</string>
   <string name="authenticator">Todentaja</string>
@@ -166,6 +167,7 @@
   <string name="rate_the_app_description">Harkitse tukemistamme hyvällä arvostelulla!</string>
   <string name="regenerate_password">Luo uusi salasana</string>
   <string name="retype_master_password">Syötä pääsalasana uudelleen</string>
+  <string name="retype_master_password_required">Toista pääsalasana (pakollinen)</string>
   <string name="search_vault">Etsi holvista</string>
   <string name="security">Suojaus</string>
   <string name="select">Valitse</string>
@@ -329,6 +331,7 @@ Koodi skannataan automaattisesti.</string>
   <string name="no_items_folder">Kansiossa ei ole kohteita.</string>
   <string name="no_items_trash">Roskakorissa ei ole kohteita.</string>
   <string name="autofill_accessibility_service">Automaattitäytön esteettömyyspalvelu</string>
+  <string name="autofill_accessibility_summary">Avusta muiden sovellusten ja verkkosivustojen käyttäjätunnus- ja salasanakenttien täytössä.</string>
   <string name="autofill_service_description">Bitwardenin automaattitäytön palvelu käyttää Android Autofill Framework -rajapintaa kirjautumistietojen täyttöön laitteen muissa sovelluksissa.</string>
   <string name="bitwarden_autofill_service_description">Käytä Bitwardenin automaattitäytön palvelua kirjautumistietojen täyttöön muissa sovelluksissa.</string>
   <string name="bitwarden_autofill_service_open_autofill_settings">Avaa \"Automaattinen täyttö -palvelu\" -asetukset</string>
@@ -453,6 +456,7 @@ Koodi skannataan automaattisesti.</string>
   <string name="copy_notes">Kopioi merkinnät</string>
   <string name="exit">Poistu</string>
   <string name="exit_confirmation">Haluatko varmasti poistua Bitwardenista?</string>
+  <string name="require_master_password_on_app_restart">Require master password on app restart?</string>
   <string name="pin_require_master_password_restart">Vaaditaanko lukituksen avaus pääsalasanalla, kun sovellus käynnistetään uudelleen?</string>
   <string name="black">Musta</string>
   <string name="nord">Nord</string>
@@ -461,7 +465,7 @@ Koodi skannataan automaattisesti.</string>
   <string name="ask_to_add_login">Kysy lisätäänkö kirjautumistieto</string>
   <string name="ask_to_add_login_description">Kysy lisätäänkö uusi kohde, jos holvissa ei vielä ole sopivaa kohdetta.</string>
   <string name="on_restart">Kun sovellus käynnistetään uudelleen</string>
-  <string name="autofill_service_not_enabled">Automaattisen täytön avulla Bitwarden-holviasi on helppo käyttää sivustoilla ja muissa sovelluksissa. Näyttää siltä, ettei Bitwardenia ole määritetty automaattitäytön palveluksi. Määritys onnistuu \"Asetukset\"-ruudusta.</string>
+  <string name="autofill_service_not_enabled">Automaattitäytön avulla Bitwarden-holviasi on helppo käyttää sivustoilla ja muissa sovelluksissa. Näyttää siltä, ettei Bitwardenia ole määritetty automaattitäytön palveluksi. Määritys onnistuu asetuksista.</string>
   <string name="theme_applied_on_restart">Teema vaihtuu kun sovellus käynnistetään uudelleen.</string>
   <string name="capitalize">Sanat isoilla alkukirjaimilla</string>
   <string name="include_number">Sisällytä numero</string>
@@ -541,6 +545,7 @@ Koodi skannataan automaattisesti.</string>
   <string name="accessibility_description2">Käytä Bitwardenin esteettömyyspalvelua kirjautumistietojen automaattiseen täyttöön sovelluksissa ja verkkosivustoilla (myös \"Näkyminen muiden päällä\" -asetuksen on oltava käytössä).</string>
   <string name="accessibility_description3">Käytä Bitwardenin esteettömyyspalvelua käyttääksesi Automaattisen täytön pikavalintapalkkia ja/tai näytä palkki käyttäen \"Näkyminen muiden päällä\" -asetusta.</string>
   <string name="accessibility_description4">Vaaditaan automaattisen täytön pikavalintapalkin käyttöön tai automaattisen täytön laajentamiseen \"Näkyminen muiden päällä\" -asetuksella.</string>
+  <string name="accessibility_description5">Vaaditaan automaattitäytön pikavalintapalkin käyttöön.</string>
   <string name="draw_over">Näkyminen muiden päällä</string>
   <string name="draw_over_description">Sallii Bitwardenin esteettömyyspalvelun näyttää pikavalintapalkin aktiivisten kirjautumiskenttien ohessa.</string>
   <string name="draw_over_description2">Kun käytössä, Bitwardenin esteettömyyspalvelu näyttää aktiivisten kirjautumiskenttien ohessa pikavalintapalkin helpottaakseen kirjautumistietojen automaattista täyttöä.</string>
@@ -629,8 +634,8 @@ Koodi skannataan automaattisesti.</string>
   <string name="fido2_return_to_app">Palaa sovellukseen</string>
   <string name="fido2_check_browser">Varmista, että oletusselaimesi sisältää WebAuthn-tuen ja yritä uudelleen.</string>
   <string name="reset_password_auto_enroll_invite_warning">Organisaatiolla on yrityskäytäntö, joka liittää tilisi automaattisesti salasanan palautusapuun. Liitos sallii organisaation ylläpitäjien vaihtaa pääsalasanasi.</string>
-  <string name="vault_timeout_policy_in_effect">Organisaatiokäytännöt ovat määrittäneet holvisi aikakatkaisun enimmäisajaksi %1$s tunti(a) %2$s minuutti(a).</string>
-  <string name="vault_timeout_policy_with_action_in_effect">Organisaatiokäytännöt vaikuttavat holvisi aikakatkaisuun. Suurin sallittu aika on %1$s tunti(a) %2$s minuutti(a). Holvillesi määritetty aikakatkaisutoiminto on %3$s.</string>
+  <string name="vault_timeout_policy_in_effect">Organisaatiokäytännöt ovat määrittäneet holvisi aikakatkaisun enimmäisajaksi %1$s tuntia %2$s minuuttia.</string>
+  <string name="vault_timeout_policy_with_action_in_effect">Organisaatiokäytännöt vaikuttavat holvisi aikakatkaisuun. Suurin sallittu aika on %1$s tuntia %2$s minuuttia. Holvillesi määritetty aikakatkaisutoiminto on %3$s.</string>
   <string name="vault_timeout_action_policy_in_effect">Organisaatiokäytännöt ovat määrittäneet holville aikakatkaisutoiminnon %1$s.</string>
   <string name="vault_timeout_to_large">Holvisi aikakatkaisu ylittää organisaatiosi asettamat rajoitukset.</string>
   <string name="disable_personal_vault_export_policy_in_effect">Yksi tai useampi organisaatiokäytäntö estää henkilökohtaisen holvisi viennin.</string>
@@ -771,7 +776,7 @@ Haluatko vaihtaa tähän tiliin?</string>
   <string name="language_change_requires_app_restart">Kielen vaihto vaatii sovelluksen uudelleenkäynnistyksen.</string>
   <string name="default_system">Oletus (järjestelmä)</string>
   <string name="important">Tärkeää</string>
-  <string name="your_master_password_cannot_be_recovered_if_you_forget_it_x_characters_minimum">Pääsalasanasi palautus ei ole mahdollista, jos unohdat sen! Vähintään %1$s merkkiä.</string>
+  <string name="your_master_password_cannot_be_recovered_if_you_forget_it_x_characters_minimum">Pääsalasanaasi ei ole mahdollista palauttaa, jos unohdat sen! Vähintään %1$s merkkiä.</string>
   <string name="weak_master_password">Heikko pääsalasana</string>
   <string name="weak_password_identified_use_a_strong_password_to_protect_your_account">Havaittiin heikko salasana. Suojaa tilisi vahvalla salasanalla. Haluatko varmasti käyttää heikkoa salasanaa?</string>
   <string name="weak">Heikko</string>
@@ -847,9 +852,9 @@ Haluatko vaihtaa tähän tiliin?</string>
   <string name="session_timeout">Istunnon aikakatkaisu</string>
   <string name="session_timeout_action">Istunnon aikakatkaisutoiminto</string>
   <string name="account_fingerprint_phrase">Tilin tunnistelauseke</string>
-  <string name="one_hour_and_one_minute">1 tunti 1 minuutti</string>
-  <string name="one_hour_and_x_minute">1 tunti %1$s minuuttia</string>
-  <string name="x_hours_and_one_minute">%1$s tuntia 1 minuutti</string>
+  <string name="one_hour_and_one_minute">Tunti ja minuutti</string>
+  <string name="one_hour_and_x_minute">Tunti ja %1$s minuuttia</string>
+  <string name="x_hours_and_one_minute">%1$s tuntia ja minuutti</string>
   <string name="x_hours_and_y_minutes">%1$s tuntia %2$s minuuttia</string>
   <string name="x_hours">%1$s tuntia</string>
   <string name="passkey_management_explanation_long">Käytä Bitwardenia uusien pääsyavainten tallennukseen ja kirjaudu palveluihin holviisi aiemmin tallennetuilla avaimilla.</string>
@@ -902,7 +907,7 @@ Haluatko vaihtaa tähän tiliin?</string>
   <string name="get_instant_access_to_your_passwords_and_passkeys">Tavoita salasanasi ja pääsyavaimesi välittömästi!</string>
   <string name="set_up_auto_fill_description_long">Määrittääksesi salasanojen automaattitäytön ja pääsyavainten hallinnan, aseta Bitwarden iOS-laitteesi asetuksista näiden oletusratkaisuksi.</string>
   <string name="first_dot_go_to_your_device_settings_passwords_password_options">1. Avaa laitteesi Asetukset &gt; Salasanat &gt; Salasanavalinnat</string>
-  <string name="second_dot_turn_on_auto_fill">4. Kytke automaattinen täyttö käyttöön</string>
+  <string name="second_dot_turn_on_auto_fill">4. Kytke automaattitäyttö käyttöön</string>
   <string name="third_dot_select_bitwarden_to_use_for_passwords_and_passkeys">3. Valitse \"Bitwarden\" käyttääksesi sitä salasanoille ja pääsyavaimille</string>
   <string name="your_passkey_will_be_saved_to_your_bitwarden_vault">Pääsyavaimesi tallennetaan Bitwarden-holviisi</string>
   <string name="your_passkey_will_be_saved_to_your_bitwarden_vault_for_x">Pääsyavaimesi tallennetaan Bitwarden-holvisi kohteeseen %1$s</string>
@@ -992,6 +997,18 @@ Haluatko vaihtaa tähän tiliin?</string>
   <string name="expired_link">Vanhentunut linkki</string>
   <string name="please_restart_registration_or_try_logging_in">Aloita rekisteröityminen alusta tai yritä kirjautua sisään uudelleen. Sinulla saattaa jo olla tili.</string>
   <string name="restart_registration">Aloita rekisteröityminen alusta</string>
-  <string name="authenticator_sync">Authenticator Sync</string>
-  <string name="allow_bitwarden_authenticator_syncing">Allow Bitwarden Authenticator Syncing</string>
+  <string name="authenticator_sync">Authenticator-synkronointi</string>
+  <string name="allow_bitwarden_authenticator_syncing">Salli Bitwarden Authenticator -synkronointi</string>
+  <string name="there_was_an_issue_validating_the_registration_token">Ongelma vahvistettaessa rekisteröintitunnistetta.</string>
+  <string name="turn_on_autofill">Kytke automaattitäyttö käyttöön</string>
+  <string name="use_autofill_to_log_into_your_accounts">Automaattitäytön avulla kirjaudut tileillesi yhdellä napautuksella.</string>
+  <string name="turn_on_later">Kytke käyttöön myöhemmin</string>
+  <string name="turn_on_autofill_later">Kytketäänkö automaattitäyttö käyttöön myöhemmin?</string>
+  <string name="return_to_complete_this_step_anytime_in_settings">Asetuksista voit palata viimeistelemään tämän vaiheen milloin tahansa.</string>
+  <string name="what_bitwarden_has_to_offer">Nyt voit kirjautua sovelluksiin ja verkkosivustoille tallennetuilla salasanoillasi, ja olet vapaa tutustumaan Bitwardenin muihin ominaisuuksiin.</string>
+  <string name="youre_all_set">Kaikki on valmista!</string>
+  <string name="error_connecting_with_the_duo_service_use_a_different_two_step_login_method_or_contact_duo_for_assistance">Virhe yhdistettäessä Duo-palveluun. Käytä vaihtoehtoista todennustapaa tai ole yhteydessä Duon asiakaspalveluun saadaksesi apua.</string>
+  <string name="master_password_hint_not_specified">Pääsalasanan vihje</string>
+  <string name="master_password_important_hint">Tärkeää: Pääsalasanaasi ei ole mahdollista palauttaa, jos unohdat sen! Vähintään 12 merkkiä.</string>
+  <string name="get_started">Get started</string>
 </resources>

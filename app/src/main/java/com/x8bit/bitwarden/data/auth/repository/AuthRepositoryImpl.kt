@@ -9,6 +9,7 @@ import com.x8bit.bitwarden.data.auth.datasource.disk.AuthDiskSource
 import com.x8bit.bitwarden.data.auth.datasource.disk.model.AccountJson
 import com.x8bit.bitwarden.data.auth.datasource.disk.model.AccountTokensJson
 import com.x8bit.bitwarden.data.auth.datasource.disk.model.ForcePasswordResetReason
+import com.x8bit.bitwarden.data.auth.datasource.disk.model.OnboardingStatus
 import com.x8bit.bitwarden.data.auth.datasource.disk.model.UserStateJson
 import com.x8bit.bitwarden.data.auth.datasource.network.model.DeleteAccountResponseJson
 import com.x8bit.bitwarden.data.auth.datasource.network.model.DeviceDataModel
@@ -74,6 +75,8 @@ import com.x8bit.bitwarden.data.auth.repository.util.DuoCallbackTokenResult
 import com.x8bit.bitwarden.data.auth.repository.util.SsoCallbackResult
 import com.x8bit.bitwarden.data.auth.repository.util.WebAuthResult
 import com.x8bit.bitwarden.data.auth.repository.util.activeUserIdChangesFlow
+import com.x8bit.bitwarden.data.auth.repository.util.currentOnboardingStatus
+import com.x8bit.bitwarden.data.auth.repository.util.onboardingStatusChangesFlow
 import com.x8bit.bitwarden.data.auth.repository.util.policyInformation
 import com.x8bit.bitwarden.data.auth.repository.util.toRemovedPasswordUserStateJson
 import com.x8bit.bitwarden.data.auth.repository.util.toSdkParams
@@ -250,6 +253,7 @@ class AuthRepositoryImpl(
         authDiskSource.userAccountTokensFlow,
         authDiskSource.userOrganizationsListFlow,
         authDiskSource.userKeyConnectorStateFlow,
+        authDiskSource.onboardingStatusChangesFlow,
         vaultRepository.vaultUnlockDataStateFlow,
         mutableHasPendingAccountAdditionStateFlow,
         // Ignore the data in the merge, but trigger an update when they emit.
@@ -262,14 +266,16 @@ class AuthRepositoryImpl(
         val userAccountTokens = array[1] as List<UserAccountTokens>
         val userOrganizationsList = array[2] as List<UserOrganizations>
         val userIsUsingKeyConnectorList = array[3] as List<UserKeyConnectorState>
-        val vaultState = array[4] as List<VaultUnlockData>
-        val hasPendingAccountAddition = array[5] as Boolean
+        val onboardingStatus = array[4] as OnboardingStatus?
+        val vaultState = array[5] as List<VaultUnlockData>
+        val hasPendingAccountAddition = array[6] as Boolean
         userStateJson?.toUserState(
             vaultState = vaultState,
             userAccountTokens = userAccountTokens,
             userOrganizationsList = userOrganizationsList,
             userIsUsingKeyConnectorList = userIsUsingKeyConnectorList,
             hasPendingAccountAddition = hasPendingAccountAddition,
+            onboardingStatus = onboardingStatus,
             isBiometricsEnabledProvider = ::isBiometricsEnabled,
             vaultUnlockTypeProvider = ::getVaultUnlockType,
             isDeviceTrustedProvider = ::isDeviceTrusted,
@@ -288,6 +294,7 @@ class AuthRepositoryImpl(
                     userOrganizationsList = authDiskSource.userOrganizationsList,
                     userIsUsingKeyConnectorList = authDiskSource.userKeyConnectorStateList,
                     hasPendingAccountAddition = mutableHasPendingAccountAdditionStateFlow.value,
+                    onboardingStatus = authDiskSource.currentOnboardingStatus,
                     isBiometricsEnabledProvider = ::isBiometricsEnabled,
                     vaultUnlockTypeProvider = ::getVaultUnlockType,
                     isDeviceTrustedProvider = ::isDeviceTrusted,
@@ -621,6 +628,7 @@ class AuthRepositoryImpl(
         password: String?,
         twoFactorData: TwoFactorDataModel,
         captchaToken: String?,
+        orgIdentifier: String?,
     ): LoginResult = identityTokenAuthModel
         ?.let {
             loginCommon(
@@ -630,6 +638,7 @@ class AuthRepositoryImpl(
                 twoFactorData = twoFactorData,
                 captchaToken = captchaToken ?: twoFactorResponse?.captchaToken,
                 deviceData = twoFactorDeviceData,
+                orgIdentifier = orgIdentifier,
             )
         }
         ?: LoginResult.Error(errorMessage = null)
@@ -991,7 +1000,7 @@ class AuthRepositoryImpl(
             ForcePasswordResetReason.ADMIN_FORCE_PASSWORD_RESET,
             ForcePasswordResetReason.WEAK_MASTER_PASSWORD_ON_LOGIN,
             null,
-            -> {
+                -> {
                 authSdkSource
                     .makeRegisterKeys(
                         email = activeAccount.profile.email,
@@ -1041,7 +1050,7 @@ class AuthRepositoryImpl(
                     is VaultUnlockResult.AuthenticationError,
                     VaultUnlockResult.InvalidStateError,
                     VaultUnlockResult.GenericError,
-                    -> {
+                        -> {
                         IllegalStateException("Failed to unlock vault").asFailure()
                     }
                 }
@@ -1282,6 +1291,10 @@ class AuthRepositoryImpl(
                     EmailTokenResult.Error(message = null)
                 },
             )
+    }
+
+    override fun setOnboardingStatus(userId: String, status: OnboardingStatus?) {
+        authDiskSource.storeOnboardingStatus(userId = userId, onboardingStatus = status)
     }
 
     @Suppress("CyclomaticComplexMethod")
@@ -1559,6 +1572,16 @@ class AuthRepositoryImpl(
             ),
         )
         settingsRepository.hasUserLoggedInOrCreatedAccount = true
+
+        val shouldSetOnboardingStatus = featureFlagManager.getFeatureFlag(FlagKey.OnboardingFlow) &&
+            !settingsRepository.getUserHasLoggedInValue(userId = userId)
+        if (shouldSetOnboardingStatus) {
+            setOnboardingStatus(
+                userId = userId,
+                status = OnboardingStatus.NOT_STARTED,
+            )
+        }
+
         authDiskSource.userState = userStateJson
         loginResponse.key?.let {
             // Only set the value if it's present, since we may have set it already

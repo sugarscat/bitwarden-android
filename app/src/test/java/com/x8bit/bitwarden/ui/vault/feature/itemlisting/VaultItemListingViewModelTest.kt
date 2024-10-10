@@ -2,11 +2,13 @@ package com.x8bit.bitwarden.ui.vault.feature.itemlisting
 
 import android.content.pm.SigningInfo
 import android.net.Uri
+import androidx.credentials.provider.CallingAppInfo
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.bitwarden.vault.CipherRepromptType
 import com.bitwarden.vault.CipherView
 import com.x8bit.bitwarden.R
+import com.x8bit.bitwarden.data.auth.datasource.disk.model.OnboardingStatus
 import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.auth.repository.model.SwitchAccountResult
 import com.x8bit.bitwarden.data.auth.repository.model.UserState
@@ -68,6 +70,7 @@ import com.x8bit.bitwarden.ui.vault.feature.itemlisting.util.createMockDisplayIt
 import com.x8bit.bitwarden.ui.vault.feature.vault.model.VaultFilterType
 import com.x8bit.bitwarden.ui.vault.feature.vault.util.toAccountSummaries
 import com.x8bit.bitwarden.ui.vault.feature.vault.util.toActiveAccountSummary
+import com.x8bit.bitwarden.ui.vault.model.TotpData
 import com.x8bit.bitwarden.ui.vault.model.VaultItemCipherType
 import com.x8bit.bitwarden.ui.vault.model.VaultItemListingType
 import io.mockk.Ordering
@@ -161,12 +164,13 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
         every { getActivePoliciesFlow(type = PolicyTypeJson.DISABLE_SEND) } returns emptyFlow()
     }
     private val fido2CredentialManager: Fido2CredentialManager = mockk {
-        coEvery { validateOrigin(any()) } returns Fido2ValidateOriginResult.Success
+        coEvery { validateOrigin(any(), any()) } returns Fido2ValidateOriginResult.Success
         every { isUserVerified } returns false
         every { isUserVerified = any() } just runs
         every { authenticationAttempts } returns 0
         every { authenticationAttempts = any() } just runs
         every { hasAuthenticationAttemptsRemaining() } returns true
+        every { getPasskeyAttestationOptionsOrNull(any()) } returns mockk(relaxed = true)
     }
 
     private val organizationEventManager = mockk<OrganizationEventManager> {
@@ -254,6 +258,26 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             ),
         )
         verify { authRepository.switchAccount(userId = updatedUserId) }
+    }
+
+    @Test
+    fun `BackClick with TotpData should emit ExitApp`() = runTest {
+        val totpData = TotpData(
+            uri = "otpauth://totp/issuer:accountName?secret=secret",
+            issuer = "issuer",
+            accountName = "accountName",
+            secret = "secret",
+            digits = 6,
+            period = 30,
+            algorithm = TotpData.CryptoHashAlgorithm.SHA_1,
+        )
+        specialCircumstanceManager.specialCircumstance =
+            SpecialCircumstance.AddTotpLoginItem(data = totpData)
+        val viewModel = createVaultItemListingViewModel()
+        viewModel.eventFlow.test {
+            viewModel.trySendAction(VaultItemListingsAction.BackClick)
+            assertEquals(VaultItemListingEvent.ExitApp, awaitItem())
+        }
     }
 
     @Test
@@ -791,6 +815,15 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                     sendViewList = emptyList(),
                 ),
             )
+            specialCircumstanceManager.specialCircumstance =
+                SpecialCircumstance.AutofillSelection(
+                    autofillSelectionData = AutofillSelectionData(
+                        type = AutofillSelectionData.Type.LOGIN,
+                        framework = AutofillSelectionData.Framework.AUTOFILL,
+                        uri = "https://www.test.com",
+                    ),
+                    shouldFinishWhenComplete = true,
+                )
             val viewModel = createVaultItemListingViewModel()
             coEvery {
                 authRepository.validatePassword(password = password)
@@ -809,6 +842,49 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                     cipherView,
                     awaitItem(),
                 )
+            }
+        }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `MasterPasswordRepromptSubmit for a request Success with a valid password for accessibility autofill should post to the AccessibilitySelectionManager`() =
+        runTest {
+            setupMockUri()
+            val cipherView = createMockCipherView(number = 1)
+            val cipherId = "mockId-1"
+            val password = "password"
+            mutableVaultDataStateFlow.value = DataState.Loaded(
+                data = VaultData(
+                    cipherViewList = listOf(cipherView),
+                    folderViewList = emptyList(),
+                    collectionViewList = emptyList(),
+                    sendViewList = emptyList(),
+                ),
+            )
+            specialCircumstanceManager.specialCircumstance =
+                SpecialCircumstance.AutofillSelection(
+                    autofillSelectionData = AutofillSelectionData(
+                        type = AutofillSelectionData.Type.LOGIN,
+                        framework = AutofillSelectionData.Framework.ACCESSIBILITY,
+                        uri = "https://www.test.com",
+                    ),
+                    shouldFinishWhenComplete = true,
+                )
+            val viewModel = createVaultItemListingViewModel()
+            coEvery {
+                authRepository.validatePassword(password = password)
+            } returns ValidatePasswordResult.Success(isValid = true)
+
+            accessibilitySelectionManager.accessibilitySelectionFlow.test {
+                viewModel.trySendAction(
+                    VaultItemListingsAction.MasterPasswordRepromptSubmit(
+                        password = password,
+                        masterPasswordRepromptData = MasterPasswordRepromptData.Autofill(
+                            cipherId = cipherId,
+                        ),
+                    ),
+                )
+                assertEquals(cipherView, awaitItem())
             }
         }
 
@@ -1327,7 +1403,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                                 subtitleTestTag = "PasskeyName",
                                 iconData = IconData.Network(
                                     uri = "https://vault.bitwarden.com/icons/www.mockuri.com/icon.png",
-                                    fallbackIconRes = R.drawable.ic_login_item_passkey,
+                                    fallbackIconRes = R.drawable.ic_bw_passkey,
                                 ),
                                 isAutofill = true,
                             ),
@@ -1343,6 +1419,61 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                     cipherViewList = listOf(cipherView1, cipherView2),
                 )
             }
+        }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `vaultDataStateFlow Loaded with items and totp data filtering should update ViewState to Content with filtered data`() =
+        runTest {
+            setupMockUri()
+
+            val uri = "otpauth://totp/issuer:accountName?secret=secret"
+            val totpData = TotpData(
+                uri = uri,
+                issuer = null,
+                accountName = "Name-1",
+                secret = "secret",
+                digits = 6,
+                period = 30,
+                algorithm = TotpData.CryptoHashAlgorithm.SHA_1,
+            )
+            val cipherView1 = createMockCipherView(number = 1)
+            val cipherView2 = createMockCipherView(number = 2)
+
+            // Filtering comes later, so we return everything here
+            mockFilteredCiphers = listOf(cipherView1, cipherView2)
+
+            specialCircumstanceManager.specialCircumstance =
+                SpecialCircumstance.AddTotpLoginItem(data = totpData)
+            val dataState = DataState.Loaded(
+                data = VaultData(
+                    cipherViewList = listOf(cipherView1, cipherView2),
+                    folderViewList = listOf(createMockFolderView(number = 1)),
+                    collectionViewList = listOf(createMockCollectionView(number = 1)),
+                    sendViewList = listOf(createMockSendView(number = 1)),
+                ),
+            )
+
+            val viewModel = createVaultItemListingViewModel()
+
+            mutableVaultDataStateFlow.value = dataState
+
+            assertEquals(
+                createVaultItemListingState(
+                    viewState = VaultItemListingState.ViewState.Content(
+                        displayCollectionList = emptyList(),
+                        displayItemList = listOf(
+                            createMockDisplayItemForCipher(
+                                number = 1,
+                                secondSubtitleTestTag = "PasskeySite",
+                            ),
+                        ),
+                        displayFolderList = emptyList(),
+                    ),
+                )
+                    .copy(totpData = totpData),
+                viewModel.stateFlow.value,
+            )
         }
 
     @Suppress("MaxLineLength")
@@ -1366,7 +1497,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                 )
             } returns DecryptFido2CredentialAutofillViewResult.Success(emptyList())
             coEvery {
-                fido2CredentialManager.validateOrigin(any())
+                fido2CredentialManager.validateOrigin(any(), any())
             } returns Fido2ValidateOriginResult.Success
 
             mockFilteredCiphers = listOf(cipherView1)
@@ -1407,7 +1538,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                                     subtitleTestTag = "PasskeyName",
                                     iconData = IconData.Network(
                                         uri = "https://vault.bitwarden.com/icons/www.mockuri.com/icon.png",
-                                        fallbackIconRes = R.drawable.ic_login_item_passkey,
+                                        fallbackIconRes = R.drawable.ic_bw_passkey,
                                     ),
                                     isFido2Creation = true,
                                 ),
@@ -1422,7 +1553,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                 vaultRepository.getDecryptedFido2CredentialAutofillViews(
                     cipherViewList = listOf(cipherView1, cipherView2),
                 )
-                fido2CredentialManager.validateOrigin(any())
+                fido2CredentialManager.validateOrigin(any(), any())
             }
         }
 
@@ -1462,6 +1593,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                 candidateQueryData = mockk(),
                 clientDataHash = byteArrayOf(0),
                 id = "mockId",
+                userId = "mockUserId",
             )
 
             specialCircumstanceManager.specialCircumstance =
@@ -1522,6 +1654,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             assertEquals(
                 createVaultItemListingState(
                     viewState = VaultItemListingState.ViewState.NoItems(
+                        header = R.string.save_and_protect_your_data.asText(),
                         message = R.string.no_items.asText(),
                         shouldShowAddButton = true,
                         buttonText = R.string.add_an_item.asText(),
@@ -1549,6 +1682,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             assertEquals(
                 createVaultItemListingState(
                     viewState = VaultItemListingState.ViewState.NoItems(
+                        header = R.string.save_and_protect_your_data.asText(),
                         message = R.string.no_items.asText(),
                         shouldShowAddButton = true,
                         buttonText = R.string.add_an_item.asText(),
@@ -1620,6 +1754,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
         assertEquals(
             createVaultItemListingState(
                 viewState = VaultItemListingState.ViewState.NoItems(
+                    header = R.string.save_and_protect_your_data.asText(),
                     message = R.string.no_items.asText(),
                     shouldShowAddButton = true,
                     buttonText = R.string.add_an_item.asText(),
@@ -1647,6 +1782,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
         assertEquals(
             createVaultItemListingState(
                 viewState = VaultItemListingState.ViewState.NoItems(
+                    header = R.string.save_and_protect_your_data.asText(),
                     message = R.string.no_items.asText(),
                     shouldShowAddButton = true,
                     buttonText = R.string.add_an_item.asText(),
@@ -1730,6 +1866,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
         assertEquals(
             createVaultItemListingState(
                 viewState = VaultItemListingState.ViewState.NoItems(
+                    header = R.string.save_and_protect_your_data.asText(),
                     message = R.string.no_items.asText(),
                     shouldShowAddButton = true,
                     buttonText = R.string.add_an_item.asText(),
@@ -1758,6 +1895,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
         assertEquals(
             createVaultItemListingState(
                 viewState = VaultItemListingState.ViewState.NoItems(
+                    header = R.string.save_and_protect_your_data.asText(),
                     message = R.string.no_items.asText(),
                     shouldShowAddButton = true,
                     buttonText = R.string.add_an_item.asText(),
@@ -1842,6 +1980,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
         assertEquals(
             createVaultItemListingState(
                 viewState = VaultItemListingState.ViewState.NoItems(
+                    header = R.string.save_and_protect_your_data.asText(),
                     message = R.string.no_items.asText(),
                     shouldShowAddButton = true,
                     buttonText = R.string.add_an_item.asText(),
@@ -1869,6 +2008,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
         assertEquals(
             createVaultItemListingState(
                 viewState = VaultItemListingState.ViewState.NoItems(
+                    header = R.string.save_and_protect_your_data.asText(),
                     message = R.string.no_items.asText(),
                     shouldShowAddButton = true,
                     buttonText = R.string.add_an_item.asText(),
@@ -1958,27 +2098,25 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
         createVaultItemListingViewModel()
 
         coVerify(ordering = Ordering.ORDERED) {
-            fido2CredentialManager.validateOrigin(fido2CredentialRequest)
+            fido2CredentialManager.validateOrigin(any(), any())
             vaultRepository.vaultDataStateFlow
         }
     }
 
     @Test
     fun `Fido2ValidateOriginResult should update dialog state on Unknown error`() = runTest {
-        val fido2CredentialRequest = Fido2CredentialRequest(
-            userId = "mockUserId",
-            requestJson = "{}",
-            packageName = "com.x8bit.bitwarden",
-            signingInfo = SigningInfo(),
-            origin = null,
-        )
+        val mockCallingAppInfo = mockk<CallingAppInfo>(relaxed = true)
+        val mock = mockk<Fido2CredentialRequest> {
+            every { callingAppInfo } returns mockCallingAppInfo
+            every { requestJson } returns "{}"
+        }
 
         specialCircumstanceManager.specialCircumstance = SpecialCircumstance.Fido2Save(
-            fido2CredentialRequest = fido2CredentialRequest,
+            fido2CredentialRequest = mock,
         )
 
         coEvery {
-            fido2CredentialManager.validateOrigin(fido2CredentialRequest)
+            fido2CredentialManager.validateOrigin(any(), any())
         } returns Fido2ValidateOriginResult.Error.Unknown
 
         val viewModel = createVaultItemListingViewModel()
@@ -2009,7 +2147,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             )
 
             coEvery {
-                fido2CredentialManager.validateOrigin(fido2CredentialRequest)
+                fido2CredentialManager.validateOrigin(any(), any())
             } returns Fido2ValidateOriginResult.Error.PrivilegedAppNotAllowed
 
             val viewModel = createVaultItemListingViewModel()
@@ -2040,7 +2178,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             )
 
             coEvery {
-                fido2CredentialManager.validateOrigin(fido2CredentialRequest)
+                fido2CredentialManager.validateOrigin(any(), any())
             } returns Fido2ValidateOriginResult.Error.PrivilegedAppSignatureNotFound
 
             val viewModel = createVaultItemListingViewModel()
@@ -2071,7 +2209,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             )
 
             coEvery {
-                fido2CredentialManager.validateOrigin(fido2CredentialRequest)
+                fido2CredentialManager.validateOrigin(any(), any())
             } returns Fido2ValidateOriginResult.Error.PasskeyNotSupportedForApp
 
             val viewModel = createVaultItemListingViewModel()
@@ -2102,7 +2240,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             )
 
             coEvery {
-                fido2CredentialManager.validateOrigin(fido2CredentialRequest)
+                fido2CredentialManager.validateOrigin(any(), any())
             } returns Fido2ValidateOriginResult.Error.ApplicationNotFound
 
             val viewModel = createVaultItemListingViewModel()
@@ -2133,7 +2271,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             )
 
             coEvery {
-                fido2CredentialManager.validateOrigin(fido2CredentialRequest)
+                fido2CredentialManager.validateOrigin(any(), any())
             } returns Fido2ValidateOriginResult.Error.AssetLinkNotFound
 
             val viewModel = createVaultItemListingViewModel()
@@ -2164,7 +2302,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             )
 
             coEvery {
-                fido2CredentialManager.validateOrigin(fido2CredentialRequest)
+                fido2CredentialManager.validateOrigin(any(), any())
             } returns Fido2ValidateOriginResult.Error.ApplicationNotVerified
 
             val viewModel = createVaultItemListingViewModel()
@@ -2514,6 +2652,93 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
                 viewModel.stateFlow.value.dialogState,
             )
             verify(exactly = 0) { fido2CredentialManager.isUserVerified }
+        }
+
+    @Test
+    fun `Fido2AssertionRequest should show error dialog when relyingPartyId is null`() = runTest {
+        val mockAssertionRequest = createMockFido2CredentialAssertionRequest(number = 1)
+            .copy(cipherId = "mockId-1")
+        val mockFido2CredentialList = createMockSdkFido2CredentialList(number = 1)
+        specialCircumstanceManager.specialCircumstance = SpecialCircumstance.Fido2Assertion(
+            mockAssertionRequest,
+        )
+        every {
+            vaultRepository
+                .ciphersStateFlow
+                .value
+                .data
+        } returns listOf(
+            createMockCipherView(
+                number = 1,
+                fido2Credentials = mockFido2CredentialList,
+            ),
+        )
+        every {
+            fido2CredentialManager.getPasskeyAssertionOptionsOrNull(
+                mockAssertionRequest.requestJson,
+            )
+        } returns createMockPasskeyAssertionOptions(
+            number = 1,
+            userVerificationRequirement = UserVerificationRequirement.DISCOURAGED,
+            relyingPartyId = null,
+        )
+
+        val viewModel = createVaultItemListingViewModel()
+        assertEquals(
+            VaultItemListingState.DialogState.Fido2OperationFail(
+                title = R.string.an_error_has_occurred.asText(),
+                message = R.string.passkey_operation_failed_because_user_could_not_be_verified
+                    .asText(),
+            ),
+            viewModel.stateFlow.value.dialogState,
+        )
+        verify(exactly = 0) { fido2CredentialManager.isUserVerified }
+    }
+
+    @Test
+    fun `Fido2AssertionRequest should show error dialog when validateOrigin is not Success`() =
+        runTest {
+            val mockAssertionRequest = createMockFido2CredentialAssertionRequest(number = 1)
+                .copy(cipherId = "mockId-1")
+            val mockAssertionOptions = createMockPasskeyAssertionOptions(
+                number = 1,
+                userVerificationRequirement = UserVerificationRequirement.DISCOURAGED,
+            )
+            val mockFido2CredentialList = createMockSdkFido2CredentialList(number = 1)
+            specialCircumstanceManager.specialCircumstance = SpecialCircumstance.Fido2Assertion(
+                mockAssertionRequest,
+            )
+            every {
+                vaultRepository
+                    .ciphersStateFlow
+                    .value
+                    .data
+            } returns listOf(
+                createMockCipherView(
+                    number = 1,
+                    fido2Credentials = mockFido2CredentialList,
+                ),
+            )
+            every {
+                fido2CredentialManager.getPasskeyAssertionOptionsOrNull(
+                    requestJson = mockAssertionRequest.requestJson,
+                )
+            } returns mockAssertionOptions
+            coEvery {
+                fido2CredentialManager.validateOrigin(any(), any())
+            } returns Fido2ValidateOriginResult.Error.Unknown
+
+            val viewModel = createVaultItemListingViewModel()
+
+            viewModel.stateFlow.test {
+                assertEquals(
+                    VaultItemListingState.DialogState.Fido2OperationFail(
+                        title = R.string.an_error_has_occurred.asText(),
+                        message = R.string.generic_error_message.asText(),
+                    ),
+                    awaitItem().dialogState,
+                )
+            }
         }
 
     @Suppress("MaxLineLength")
@@ -3746,7 +3971,6 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
 
     private fun createVaultItemListingViewModel(
         savedStateHandle: SavedStateHandle = initialSavedStateHandle,
-        vaultRepository: VaultRepository = this.vaultRepository,
     ): VaultItemListingViewModel =
         VaultItemListingViewModel(
             savedStateHandle = savedStateHandle,
@@ -3781,6 +4005,7 @@ class VaultItemListingViewModelTest : BaseViewModelTest() {
             isIconLoadingDisabled = settingsRepository.isIconLoadingDisabled,
             isPullToRefreshSettingEnabled = false,
             dialogState = null,
+            totpData = null,
             autofillSelectionData = null,
             policyDisablesSend = false,
             hasMasterPassword = true,
@@ -3806,6 +4031,7 @@ private val DEFAULT_ACCOUNT = UserState.Account(
     trustedDevice = null,
     hasMasterPassword = true,
     isUsingKeyConnector = false,
+    onboardingStatus = OnboardingStatus.COMPLETE,
 )
 
 private val DEFAULT_USER_STATE = UserState(

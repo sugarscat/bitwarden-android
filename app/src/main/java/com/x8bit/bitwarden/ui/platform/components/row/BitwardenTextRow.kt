@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -19,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.x8bit.bitwarden.ui.platform.components.divider.BitwardenHorizontalDivider
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Represents a clickable row of text and can contains an optional [content] that appears to the
@@ -50,7 +50,9 @@ fun BitwardenTextRow(
             .clickable(
                 enabled = isEnabled,
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 onClick = onClick,
             )
             .semantics(mergeDescendants = true) { },
@@ -70,29 +72,29 @@ fun BitwardenTextRow(
             ) {
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(
-                        alpha = if (isEnabled) 1.0f else 0.38f,
-                    ),
+                    style = BitwardenTheme.typography.bodyLarge,
+                    color = if (isEnabled) {
+                        BitwardenTheme.colorScheme.text.primary
+                    } else {
+                        BitwardenTheme.colorScheme.filledButton.foregroundDisabled
+                    },
                 )
                 description?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                            alpha = if (isEnabled) 1.0f else 0.38f,
-                        ),
+                        style = BitwardenTheme.typography.bodyMedium,
+                        color = if (isEnabled) {
+                            BitwardenTheme.colorScheme.text.secondary
+                        } else {
+                            BitwardenTheme.colorScheme.filledButton.foregroundDisabled
+                        },
                     )
                 }
             }
             content?.invoke()
         }
         if (withDivider) {
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 16.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
+            BitwardenHorizontalDivider(modifier = Modifier.padding(start = 16.dp))
         }
     }
 }

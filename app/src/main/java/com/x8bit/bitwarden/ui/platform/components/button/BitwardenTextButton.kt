@@ -1,8 +1,6 @@
 package com.x8bit.bitwarden.ui.platform.components.button
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -10,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.x8bit.bitwarden.ui.platform.components.button.color.bitwardenTextButtonColors
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Represents a Bitwarden-styled [TextButton].
@@ -25,16 +25,8 @@ fun BitwardenTextButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isEnabled: Boolean = true,
-    labelTextColor: Color? = null,
+    labelTextColor: Color = BitwardenTheme.colorScheme.outlineButton.foreground,
 ) {
-    val defaultColors = if (labelTextColor != null) {
-        ButtonDefaults.textButtonColors(
-            contentColor = labelTextColor,
-        )
-    } else {
-        ButtonDefaults.textButtonColors()
-    }
-
     TextButton(
         onClick = onClick,
         modifier = modifier,
@@ -43,11 +35,11 @@ fun BitwardenTextButton(
             vertical = 10.dp,
             horizontal = 24.dp,
         ),
-        colors = defaultColors,
+        colors = bitwardenTextButtonColors(contentColor = labelTextColor),
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelLarge,
+            style = BitwardenTheme.typography.labelLarge,
         )
     }
 }

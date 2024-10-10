@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -41,6 +40,7 @@ import com.x8bit.bitwarden.ui.auth.feature.accountsetup.handlers.SetupUnlockHand
 import com.x8bit.bitwarden.ui.platform.base.util.EventsEffect
 import com.x8bit.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
+import com.x8bit.bitwarden.ui.platform.components.appbar.NavigationIcon
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenFilledButton
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.x8bit.bitwarden.ui.platform.components.dialog.BasicDialogState
@@ -54,24 +54,25 @@ import com.x8bit.bitwarden.ui.platform.components.toggle.BitwardenUnlockWithPinS
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.composition.LocalBiometricsManager
 import com.x8bit.bitwarden.ui.platform.manager.biometrics.BiometricsManager
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.ui.platform.util.isPortrait
 
 /**
  * Top level composable for the setup unlock screen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongMethod")
 @Composable
 fun SetupUnlockScreen(
-    onNavigateToSetupAutofill: () -> Unit,
     viewModel: SetupUnlockViewModel = hiltViewModel(),
     biometricsManager: BiometricsManager = LocalBiometricsManager.current,
+    onNavigateBack: () -> Unit,
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val handler = remember(viewModel) { SetupUnlockHandler.create(viewModel = viewModel) }
     var showBiometricsPrompt by rememberSaveable { mutableStateOf(value = false) }
     EventsEffect(viewModel = viewModel) { event ->
         when (event) {
-            SetupUnlockEvent.NavigateToSetupAutofill -> onNavigateToSetupAutofill()
             is SetupUnlockEvent.ShowBiometricsPrompt -> {
                 showBiometricsPrompt = true
                 biometricsManager.promptBiometrics(
@@ -85,6 +86,8 @@ fun SetupUnlockScreen(
                     cipher = event.cipher,
                 )
             }
+
+            SetupUnlockEvent.NavigateBack -> onNavigateBack()
         }
     }
 
@@ -102,9 +105,27 @@ fun SetupUnlockScreen(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             BitwardenTopAppBar(
-                title = stringResource(id = R.string.account_setup),
+                title = stringResource(
+                    id = if (state.isInitialSetup) {
+                        R.string.account_setup
+                    } else {
+                        R.string.set_up_unlock
+                    },
+                ),
                 scrollBehavior = scrollBehavior,
-                navigationIcon = null,
+                navigationIcon = if (state.isInitialSetup) {
+                    null
+                } else {
+                    NavigationIcon(
+                        navigationIcon = rememberVectorPainter(id = R.drawable.ic_close),
+                        navigationIconContentDescription = stringResource(id = R.string.close),
+                        onNavigationIconClick = remember(viewModel) {
+                            {
+                                viewModel.trySendAction(SetupUnlockAction.CloseClick)
+                            }
+                        },
+                    )
+                },
             )
         },
     ) { innerPadding ->
@@ -171,14 +192,16 @@ private fun SetupUnlockScreenContent(
         )
 
         Spacer(modifier = Modifier.height(height = 12.dp))
-        SetUpLaterButton(
-            onConfirmClick = handler.onSetUpLaterClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .standardHorizontalMargin(),
-        )
+        if (state.isInitialSetup) {
+            SetUpLaterButton(
+                onConfirmClick = handler.onSetUpLaterClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .standardHorizontalMargin(),
+            )
 
-        Spacer(modifier = Modifier.height(height = 12.dp))
+            Spacer(modifier = Modifier.height(height = 12.dp))
+        }
         Spacer(modifier = Modifier.navigationBarsPadding())
     }
 }
@@ -229,8 +252,8 @@ private fun ColumnScope.SetupUnlockHeaderPortrait() {
     Spacer(modifier = Modifier.height(height = 24.dp))
     Text(
         text = stringResource(id = R.string.set_up_unlock),
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface,
+        style = BitwardenTheme.typography.titleMedium,
+        color = BitwardenTheme.colorScheme.text.primary,
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
@@ -243,8 +266,8 @@ private fun ColumnScope.SetupUnlockHeaderPortrait() {
         text = stringResource(
             id = R.string.set_up_biometrics_or_choose_a_pin_code_to_quickly_access_your_vault_and_autofill_your_logins,
         ),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurface,
+        style = BitwardenTheme.typography.bodyMedium,
+        color = BitwardenTheme.colorScheme.text.primary,
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
@@ -275,8 +298,8 @@ private fun SetupUnlockHeaderLandscape(
         ) {
             Text(
                 text = stringResource(id = R.string.set_up_unlock),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.titleMedium,
+                color = BitwardenTheme.colorScheme.text.primary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -287,8 +310,8 @@ private fun SetupUnlockHeaderLandscape(
                 text = stringResource(
                     id = R.string.set_up_biometrics_or_choose_a_pin_code_to_quickly_access_your_vault_and_autofill_your_logins,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.bodyMedium,
+                color = BitwardenTheme.colorScheme.text.primary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )

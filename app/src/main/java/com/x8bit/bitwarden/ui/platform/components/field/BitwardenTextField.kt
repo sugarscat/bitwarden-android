@@ -2,8 +2,6 @@ package com.x8bit.bitwarden.ui.platform.components.field
 
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,7 +21,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.ui.platform.base.util.toPx
 import com.x8bit.bitwarden.ui.platform.base.util.withLineBreaksAtWidth
+import com.x8bit.bitwarden.ui.platform.components.field.color.bitwardenTextFieldColors
 import com.x8bit.bitwarden.ui.platform.components.model.IconResource
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Component that allows the user to input text. This composable will manage the state of
@@ -60,7 +60,7 @@ fun BitwardenTextField(
     singleLine: Boolean = true,
     readOnly: Boolean = false,
     enabled: Boolean = true,
-    textStyle: TextStyle? = null,
+    textStyle: TextStyle = BitwardenTheme.typography.bodyLarge,
     shouldAddCustomLineBreaks: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
     isError: Boolean = false,
@@ -69,18 +69,18 @@ fun BitwardenTextField(
 ) {
     var widthPx by remember { mutableIntStateOf(0) }
     val focusRequester = remember { FocusRequester() }
-    val currentTextStyle = textStyle ?: LocalTextStyle.current
     val formattedText = if (shouldAddCustomLineBreaks) {
         value.withLineBreaksAtWidth(
             // Adjust for built in padding
             widthPx = widthPx - 16.dp.toPx(),
-            monospacedTextStyle = currentTextStyle,
+            monospacedTextStyle = textStyle,
         )
     } else {
         value
     }
 
     OutlinedTextField(
+        colors = bitwardenTextFieldColors(),
         modifier = modifier
             .onGloballyPositioned { widthPx = it.size.width }
             .focusRequester(focusRequester),
@@ -92,28 +92,31 @@ fun BitwardenTextField(
                 Icon(
                     painter = iconResource.iconPainter,
                     contentDescription = iconResource.contentDescription,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = BitwardenTheme.colorScheme.icon.primary,
                 )
             }
         },
-        trailingIcon = trailingIconContent?.let {
-            trailingIconContent
-        },
+        trailingIcon = trailingIconContent,
         placeholder = placeholder?.let {
-            { Text(text = it) }
+            {
+                Text(
+                    text = it,
+                    color = BitwardenTheme.colorScheme.text.primary,
+                )
+            }
         },
         supportingText = hint?.let {
             {
                 Text(
                     text = hint,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = BitwardenTheme.typography.bodySmall,
                 )
             }
         },
         onValueChange = onValueChange,
         singleLine = singleLine,
         readOnly = readOnly,
-        textStyle = currentTextStyle,
+        textStyle = textStyle,
         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = keyboardType),
         isError = isError,
         visualTransformation = visualTransformation,

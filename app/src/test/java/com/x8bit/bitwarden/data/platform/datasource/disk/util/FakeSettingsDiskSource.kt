@@ -61,6 +61,14 @@ class FakeSettingsDiskSource : SettingsDiskSource {
     private var storedSystemBiometricIntegritySource: String? = null
     private val storedAccountBiometricIntegrityValidity = mutableMapOf<String, Boolean?>()
     private val userSignIns = mutableMapOf<String, Boolean>()
+    private val userShowAutoFillBadge = mutableMapOf<String, Boolean?>()
+    private val userShowUnlockBadge = mutableMapOf<String, Boolean?>()
+
+    private val mutableShowAutoFillSettingBadgeFlowMap =
+        mutableMapOf<String, MutableSharedFlow<Boolean?>>()
+
+    private val mutableShowUnlockSettingBadgeFlowMap =
+        mutableMapOf<String, MutableSharedFlow<Boolean?>>()
 
     override var appLanguage: AppLanguage? = null
 
@@ -284,13 +292,38 @@ class FakeSettingsDiskSource : SettingsDiskSource {
 
     override fun getUserHasSignedInPreviously(userId: String): Boolean = userSignIns[userId] == true
 
+    override fun getShowAutoFillSettingBadge(userId: String): Boolean? =
+        userShowAutoFillBadge[userId]
+
+    override fun storeShowAutoFillSettingBadge(userId: String, showBadge: Boolean?) {
+        userShowAutoFillBadge[userId] = showBadge
+        getMutableShowAutoFillSettingBadgeFlow(userId).tryEmit(showBadge)
+    }
+
+    override fun getShowAutoFillSettingBadgeFlow(userId: String): Flow<Boolean?> =
+        getMutableShowAutoFillSettingBadgeFlow(userId = userId).onSubscription {
+            emit(getShowAutoFillSettingBadge(userId = userId))
+        }
+
+    override fun getShowUnlockSettingBadge(userId: String): Boolean? =
+        userShowUnlockBadge[userId]
+
+    override fun storeShowUnlockSettingBadge(userId: String, showBadge: Boolean?) {
+        userShowUnlockBadge[userId] = showBadge
+        getMutableShowUnlockSettingBadgeFlow(userId).tryEmit(showBadge)
+    }
+
+    override fun getShowUnlockSettingBadgeFlow(userId: String): Flow<Boolean?> =
+        getMutableShowUnlockSettingBadgeFlow(userId = userId).onSubscription {
+            emit(getShowUnlockSettingBadge(userId = userId))
+        }
+
+    //region Private helper functions
     private fun getMutableScreenCaptureAllowedFlow(userId: String): MutableSharedFlow<Boolean?> {
         return mutableScreenCaptureAllowedFlowMap.getOrPut(userId) {
             bufferedMutableSharedFlow(replay = 1)
         }
     }
-
-    //region Private helper functions
 
     private fun getMutableLastSyncTimeFlow(
         userId: String,
@@ -317,6 +350,17 @@ class FakeSettingsDiskSource : SettingsDiskSource {
         userId: String,
     ): MutableSharedFlow<Boolean?> =
         mutablePullToRefreshEnabledFlowMap.getOrPut(userId) {
+            bufferedMutableSharedFlow(replay = 1)
+        }
+
+    private fun getMutableShowAutoFillSettingBadgeFlow(
+        userId: String,
+    ): MutableSharedFlow<Boolean?> = mutableShowAutoFillSettingBadgeFlowMap.getOrPut(userId) {
+        bufferedMutableSharedFlow(replay = 1)
+    }
+
+    private fun getMutableShowUnlockSettingBadgeFlow(userId: String): MutableSharedFlow<Boolean?> =
+        mutableShowUnlockSettingBadgeFlowMap.getOrPut(userId) {
             bufferedMutableSharedFlow(replay = 1)
         }
 

@@ -1,19 +1,22 @@
 package com.x8bit.bitwarden.ui.platform.components.dialog.row
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.ui.platform.base.util.Text
+import com.x8bit.bitwarden.ui.platform.components.radio.BitwardenRadioButton
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * A clickable item that displays a radio button and text.
@@ -32,21 +35,27 @@ fun BitwardenSelectionRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
+                onClick = onClick,
+            )
             .semantics(mergeDescendants = true) {
                 selected = isSelected
             },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RadioButton(
+        BitwardenRadioButton(
             modifier = Modifier.padding(16.dp),
-            selected = isSelected,
+            isSelected = isSelected,
             onClick = null,
         )
         Text(
             text = text(),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyLarge,
+            color = BitwardenTheme.colorScheme.text.primary,
+            style = BitwardenTheme.typography.bodyLarge,
         )
     }
 }

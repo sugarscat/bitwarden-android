@@ -1,5 +1,8 @@
+@file:Suppress("TooManyFunctions")
+
 package com.x8bit.bitwarden.ui.vault.feature.vault.util
 
+import com.bitwarden.core.DateTime
 import com.bitwarden.vault.CardView
 import com.bitwarden.vault.CipherRepromptType
 import com.bitwarden.vault.CipherType
@@ -118,22 +121,71 @@ private fun VaultAddEditState.ViewState.Content.ItemType.toIdentityView(): Ident
 
 @Suppress("MagicNumber")
 private fun VaultAddEditState.ViewState.Content.toPasswordHistory(): List<PasswordHistoryView>? {
+    val loginCipher = type as? VaultAddEditState.ViewState.Content.ItemType.Login
     val oldPassword = common.originalCipher?.login?.password
+    val timestamp = Instant.now()
 
-    return if (oldPassword != null &&
-        oldPassword != (type as? VaultAddEditState.ViewState.Content.ItemType.Login)?.password
-    ) {
-        listOf(
+    val newPasswordHistory = getPasswordHistory(
+        loginCipher,
+        oldPassword,
+        timestamp,
+    )
+
+    val newHiddenFieldHistory = getHiddenFieldHistory(
+        timestamp,
+        common.originalCipher?.fields,
+        common.customFieldData,
+    )
+
+    return listOf(
+        common.originalCipher?.passwordHistory.orEmpty(),
+        newPasswordHistory,
+        newHiddenFieldHistory,
+    )
+        .flatten()
+        .ifEmpty { null }
+        ?.takeLast(5)
+}
+
+private fun getPasswordHistory(
+    loginCipher: VaultAddEditState.ViewState.Content.ItemType.Login?,
+    oldPassword: String?,
+    timestamp: Instant,
+): List<PasswordHistoryView> {
+    return oldPassword
+        .takeIf {
+            loginCipher != null && !it.isNullOrEmpty() && it != loginCipher.password
+        }
+        ?.let {
+            listOf(PasswordHistoryView(password = it, lastUsedDate = timestamp))
+        }
+        ?: emptyList()
+}
+
+private fun getHiddenFieldHistory(
+    timestamp: Instant,
+    oldFields: List<FieldView>?,
+    newFields: List<VaultAddEditState.Custom>,
+): List<PasswordHistoryView> {
+    return oldFields
+        ?.filter { oldField ->
+            oldField.type == FieldType.HIDDEN &&
+                !oldField.value.isNullOrEmpty() &&
+                !oldField.name.isNullOrEmpty() &&
+                newFields
+                    .none { newField ->
+                        newField is VaultAddEditState.Custom.HiddenField &&
+                            newField.name == oldField.name &&
+                            newField.value == oldField.value
+                    }
+        }
+        ?.map { field ->
             PasswordHistoryView(
-                password = oldPassword,
-                lastUsedDate = Instant.now(),
-            ),
-        )
-            .plus(common.originalCipher?.passwordHistory.orEmpty())
-            .take(5)
-    } else {
-        common.originalCipher?.passwordHistory
-    }
+                password = "${field.name}: ${field.value}",
+                lastUsedDate = timestamp,
+            )
+        }
+        .orEmpty()
 }
 
 private fun VaultAddEditState.ViewState.Content.ItemType.toLoginView(
@@ -143,7 +195,7 @@ private fun VaultAddEditState.ViewState.Content.ItemType.toLoginView(
         LoginView(
             username = it.username.orNullIfBlank(),
             password = it.password.orNullIfBlank(),
-            passwordRevisionDate = common.originalCipher?.login?.passwordRevisionDate,
+            passwordRevisionDate = it.getRevisionDate(common.originalCipher),
             uris = it.uriList.toLoginUriView(),
             totp = it.totp,
             autofillOnPageLoad = common.originalCipher?.login?.autofillOnPageLoad,
@@ -211,3 +263,16 @@ private fun List<UriItem>?.toLoginUriView(): List<LoginUriView>? =
         ?.filter { it.uri?.isNotBlank() == true }
         ?.map { LoginUriView(uri = it.uri.orEmpty(), match = it.match, uriChecksum = null) }
         .takeUnless { it.isNullOrEmpty() }
+
+private fun VaultAddEditState.ViewState.Content.ItemType.Login.getRevisionDate(
+    originalCipher: CipherView?,
+): DateTime? {
+    val isOriginalPasswordNull = originalCipher?.login?.password.isNullOrEmpty()
+    val hasPasswordHistory = originalCipher?.passwordHistory?.any() ?: false
+    val isOriginalAndNewPasswordEqual = originalCipher?.login?.password == this.password
+    return if ((!isOriginalPasswordNull || hasPasswordHistory) && !isOriginalAndNewPasswordEqual) {
+        Instant.now()
+    } else {
+        originalCipher?.login?.passwordRevisionDate
+    }
+}

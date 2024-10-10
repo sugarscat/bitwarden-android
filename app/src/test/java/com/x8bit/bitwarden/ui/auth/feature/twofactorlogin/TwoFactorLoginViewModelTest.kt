@@ -18,7 +18,6 @@ import com.x8bit.bitwarden.data.auth.repository.util.generateUriForCaptcha
 import com.x8bit.bitwarden.data.auth.repository.util.generateUriForWebAuth
 import com.x8bit.bitwarden.data.auth.util.YubiKeyResult
 import com.x8bit.bitwarden.data.platform.datasource.network.util.base64UrlDecodeOrNull
-import com.x8bit.bitwarden.data.platform.datasource.network.util.base64UrlEncode
 import com.x8bit.bitwarden.data.platform.repository.EnvironmentRepository
 import com.x8bit.bitwarden.data.platform.repository.model.Environment
 import com.x8bit.bitwarden.data.platform.repository.util.baseWebVaultUrlOrDefault
@@ -66,12 +65,15 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
         mockkStatic(
             ::generateUriForCaptcha,
             ::generateUriForWebAuth,
-            String::base64UrlEncode,
+            String::base64UrlDecodeOrNull,
         )
         mockkStatic(Uri::class)
         every {
             DEFAULT_ENCODED_PASSWORD.base64UrlDecodeOrNull()
         } returns DEFAULT_PASSWORD
+        every {
+            DEFAULT_ENCODED_ORG_IDENTIFIER.base64UrlDecodeOrNull()
+        } returns DEFAULT_ORG_IDENTIFIER
     }
 
     @AfterEach
@@ -116,7 +118,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
         val initialState = DEFAULT_STATE.copy(authMethod = TwoFactorAuthMethod.WEB_AUTH)
         coEvery {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = token,
@@ -124,6 +126,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = null,
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         } returns LoginResult.Success
         val viewModel = createViewModel(state = initialState)
@@ -136,7 +139,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
         )
         coVerify(exactly = 1) {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = token,
@@ -144,6 +147,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = null,
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         }
     }
@@ -167,7 +171,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
     fun `captchaTokenFlow success update should trigger a login`() = runTest {
         coEvery {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = "",
@@ -175,13 +179,14 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = "token",
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         } returns LoginResult.Success
         createViewModel()
         mutableCaptchaTokenResultFlow.tryEmit(CaptchaCallbackTokenResult.Success("token"))
         coVerify {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = "",
@@ -189,6 +194,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = "token",
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         }
     }
@@ -197,7 +203,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
     fun `duoTokenResultFlow success update should trigger a login`() = runTest {
         coEvery {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = "token",
@@ -205,6 +211,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = null,
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         } returns LoginResult.Success
         createViewModel(
@@ -215,7 +222,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
         mutableDuoTokenResultFlow.tryEmit(DuoCallbackTokenResult.Success("token"))
         coVerify {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = "token",
@@ -223,6 +230,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = null,
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         }
     }
@@ -283,7 +291,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
     fun `ContinueButtonClick login returns success should update loadingDialogState`() = runTest {
         coEvery {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = "",
@@ -291,6 +299,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = null,
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         } returns LoginResult.Success
 
@@ -314,7 +323,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
         }
         coVerify {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = "",
@@ -322,6 +331,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = null,
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         }
     }
@@ -363,7 +373,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
 
     @Suppress("MaxLineLength")
     @Test
-    fun `ContinueButtonClick login should emit ShowToast when auth method is Duo and authUrl is null`() =
+    fun `ContinueButtonClick login should show a dialog when auth method is Duo and authUrl is null`() =
         runTest {
             val authMethodsData = mapOf(
                 TwoFactorAuthMethod.DUO to JsonObject(
@@ -377,15 +387,25 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                 twoFactorProviders = null,
             )
             every { authRepository.twoFactorResponse } returns response
-            val viewModel = createViewModel(
-                state = DEFAULT_STATE.copy(
-                    authMethod = TwoFactorAuthMethod.DUO,
-                ),
+            val state = DEFAULT_STATE.copy(
+                authMethod = TwoFactorAuthMethod.DUO,
             )
-            viewModel.eventFlow.test {
+            val viewModel = createViewModel(
+                state = state,
+            )
+            viewModel.stateFlow.test {
+                assertEquals(
+                    state,
+                    awaitItem(),
+                )
                 viewModel.trySendAction(TwoFactorLoginAction.ContinueButtonClick)
                 assertEquals(
-                    TwoFactorLoginEvent.ShowToast(R.string.generic_error_message.asText()),
+                    state.copy(
+                        dialogState = TwoFactorLoginState.DialogState.Error(
+                            title = R.string.an_error_has_occurred.asText(),
+                            message = R.string.error_connecting_with_the_duo_service_use_a_different_two_step_login_method_or_contact_duo_for_assistance.asText(),
+                        ),
+                    ),
                     awaitItem(),
                 )
             }
@@ -469,7 +489,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
             } returns mockkUri
             coEvery {
                 authRepository.login(
-                    email = "example@email.com",
+                    email = DEFAULT_EMAIL_ADDRESS,
                     password = DEFAULT_PASSWORD,
                     twoFactorData = TwoFactorDataModel(
                         code = "",
@@ -477,6 +497,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                         remember = false,
                     ),
                     captchaToken = null,
+                    orgIdentifier = DEFAULT_ORG_IDENTIFIER,
                 )
             } returns LoginResult.CaptchaRequired(captchaId = "mock_captcha_id")
             val viewModel = createViewModel()
@@ -495,7 +516,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
             }
             coVerify {
                 authRepository.login(
-                    email = "example@email.com",
+                    email = DEFAULT_EMAIL_ADDRESS,
                     password = DEFAULT_PASSWORD,
                     twoFactorData = TwoFactorDataModel(
                         code = "",
@@ -503,6 +524,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                         remember = false,
                     ),
                     captchaToken = null,
+                    orgIdentifier = DEFAULT_ORG_IDENTIFIER,
                 )
             }
         }
@@ -511,7 +533,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
     fun `ContinueButtonClick login returns Error should update dialogState`() = runTest {
         coEvery {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = "",
@@ -519,6 +541,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = null,
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         } returns LoginResult.Error(errorMessage = null)
 
@@ -551,7 +574,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
         }
         coVerify {
             authRepository.login(
-                email = "example@email.com",
+                email = DEFAULT_EMAIL_ADDRESS,
                 password = DEFAULT_PASSWORD,
                 twoFactorData = TwoFactorDataModel(
                     code = "",
@@ -559,6 +582,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                     remember = false,
                 ),
                 captchaToken = null,
+                orgIdentifier = DEFAULT_ORG_IDENTIFIER,
             )
         }
     }
@@ -568,7 +592,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
         runTest {
             coEvery {
                 authRepository.login(
-                    email = "example@email.com",
+                    email = DEFAULT_EMAIL_ADDRESS,
                     password = DEFAULT_PASSWORD,
                     twoFactorData = TwoFactorDataModel(
                         code = "",
@@ -576,6 +600,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                         remember = false,
                     ),
                     captchaToken = null,
+                    orgIdentifier = DEFAULT_ORG_IDENTIFIER,
                 )
             } returns LoginResult.Error(errorMessage = "Mock error message")
 
@@ -608,7 +633,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
             }
             coVerify {
                 authRepository.login(
-                    email = "example@email.com",
+                    email = DEFAULT_EMAIL_ADDRESS,
                     password = DEFAULT_PASSWORD,
                     twoFactorData = TwoFactorDataModel(
                         code = "",
@@ -616,6 +641,7 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
                         remember = false,
                     ),
                     captchaToken = null,
+                    orgIdentifier = DEFAULT_ORG_IDENTIFIER,
                 )
             }
         }
@@ -849,8 +875,9 @@ class TwoFactorLoginViewModelTest : BaseViewModelTest() {
             resourceManager = resourceManager,
             savedStateHandle = SavedStateHandle().also {
                 it["state"] = state
-                it["email_address"] = "example@email.com"
+                it["email_address"] = DEFAULT_EMAIL_ADDRESS
                 it["password"] = DEFAULT_ENCODED_PASSWORD
+                it["org_identifier"] = DEFAULT_ENCODED_ORG_IDENTIFIER
             },
         )
 }
@@ -868,6 +895,9 @@ private val TWO_FACTOR_RESPONSE = GetTokenResponseJson.TwoFactorRequired(
     ssoToken = null,
     twoFactorProviders = null,
 )
+private const val DEFAULT_EMAIL_ADDRESS = "example@email.com"
+private const val DEFAULT_ORG_IDENTIFIER = "org_identifier"
+private const val DEFAULT_ENCODED_ORG_IDENTIFIER = "org_identifier"
 private const val DEFAULT_PASSWORD = "password123"
 private const val DEFAULT_ENCODED_PASSWORD = "base64EncodedPassword"
 private val DEFAULT_STATE = TwoFactorLoginState(
@@ -883,6 +913,7 @@ private val DEFAULT_STATE = TwoFactorLoginState(
     isContinueButtonEnabled = false,
     isRememberMeEnabled = false,
     captchaToken = null,
-    email = "example@email.com",
+    email = DEFAULT_EMAIL_ADDRESS,
     password = DEFAULT_PASSWORD,
+    orgIdentifier = DEFAULT_ORG_IDENTIFIER,
 )

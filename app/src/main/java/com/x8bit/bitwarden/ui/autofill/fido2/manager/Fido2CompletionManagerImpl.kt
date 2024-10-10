@@ -104,6 +104,7 @@ class Fido2CompletionManagerImpl(
                         val pendingIntent = intentManager
                             .createFido2GetCredentialPendingIntent(
                                 action = GET_PASSKEY_INTENT,
+                                userId = result.userId,
                                 credentialId = it.credentialId.toString(),
                                 cipherId = it.cipherId,
                                 requestCode = Random.nextInt(),
@@ -131,7 +132,7 @@ class Fido2CompletionManagerImpl(
             }
 
             Fido2GetCredentialsResult.Error,
-            -> {
+                -> {
                 PendingIntentHandler.setGetCredentialException(
                     resultIntent,
                     GetCredentialUnknownException(),

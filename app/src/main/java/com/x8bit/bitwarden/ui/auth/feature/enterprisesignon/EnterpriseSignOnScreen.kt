@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -40,6 +39,7 @@ import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.composition.LocalIntentManager
 import com.x8bit.bitwarden.ui.platform.manager.intent.IntentManager
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * The top level composable for the Enterprise Single Sign On screen.
@@ -50,7 +50,7 @@ import com.x8bit.bitwarden.ui.platform.manager.intent.IntentManager
 fun EnterpriseSignOnScreen(
     onNavigateBack: () -> Unit,
     onNavigateToSetPassword: () -> Unit,
-    onNavigateToTwoFactorLogin: (String) -> Unit,
+    onNavigateToTwoFactorLogin: (email: String, orgIdentifier: String) -> Unit,
     intentManager: IntentManager = LocalIntentManager.current,
     viewModel: EnterpriseSignOnViewModel = hiltViewModel(),
 ) {
@@ -72,7 +72,7 @@ fun EnterpriseSignOnScreen(
             }
 
             is EnterpriseSignOnEvent.NavigateToTwoFactorLogin -> {
-                onNavigateToTwoFactorLogin(event.emailAddress)
+                onNavigateToTwoFactorLogin(event.emailAddress, event.orgIdentifier)
             }
         }
     }
@@ -155,8 +155,8 @@ private fun EnterpriseSignOnScreenContent(
         Text(
             text = stringResource(id = R.string.log_in_sso_summary),
             textAlign = TextAlign.Start,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .fillMaxWidth(),

@@ -1,13 +1,10 @@
 package com.x8bit.bitwarden.ui.platform.components.appbar.action
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,7 +23,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
-import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.components.appbar.color.bitwardenMenuItemColors
+import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconButton
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -53,26 +51,24 @@ fun BitwardenOverflowActionItem(
         contentAlignment = Alignment.Center,
         modifier = modifier,
     ) {
-        IconButton(
+        BitwardenStandardIconButton(
+            vectorIconRes = R.drawable.ic_ellipsis_vertical,
+            contentDescription = stringResource(id = R.string.more),
             onClick = { isOverflowMenuVisible = !isOverflowMenuVisible },
-            modifier = Modifier.testTag("HeaderBarOptionsButton"),
-        ) {
-            Icon(
-                painter = rememberVectorPainter(id = R.drawable.ic_more),
-                contentDescription = stringResource(id = R.string.more),
-            )
-        }
+            modifier = Modifier.testTag(tag = "HeaderBarOptionsButton"),
+        )
         DropdownMenu(
+            shape = BitwardenTheme.shapes.menu,
             expanded = isOverflowMenuVisible,
             onDismissRequest = { isOverflowMenuVisible = false },
             offset = DpOffset(x = (-12).dp, y = 0.dp),
+            containerColor = BitwardenTheme.colorScheme.background.primary,
             modifier = Modifier
                 .semantics { testTagsAsResourceId = true }
                 .widthIn(
                     min = 112.dp,
                     max = 280.dp,
-                )
-                .background(MaterialTheme.colorScheme.surfaceContainer),
+                ),
             content = {
                 menuItemDataList.forEach { dropdownMenuItemData ->
                     DropdownMenuItem(
@@ -81,10 +77,11 @@ fun BitwardenOverflowActionItem(
                                 testTag = it
                             }
                         },
+                        colors = bitwardenMenuItemColors(),
                         text = {
                             Text(
                                 text = dropdownMenuItemData.text,
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = BitwardenTheme.typography.bodyLarge,
                             )
                         },
                         onClick = {

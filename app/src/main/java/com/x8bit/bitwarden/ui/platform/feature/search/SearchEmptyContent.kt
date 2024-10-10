@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * The empty state for the search screen.
@@ -36,10 +36,10 @@ fun SearchEmptyContent(
         Icon(
             painter = rememberVectorPainter(id = R.drawable.ic_search),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = BitwardenTheme.colorScheme.icon.primary,
             modifier = Modifier
-                .size(74.dp)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                .size(74.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -52,7 +52,7 @@ fun SearchEmptyContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 text = it(),
-                style = MaterialTheme.typography.bodyMedium,
+                style = BitwardenTheme.typography.bodyMedium,
             )
         }
 

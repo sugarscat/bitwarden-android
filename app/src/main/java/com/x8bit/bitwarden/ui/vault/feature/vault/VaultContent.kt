@@ -6,14 +6,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
+import com.x8bit.bitwarden.ui.platform.components.divider.BitwardenHorizontalDivider
 import com.x8bit.bitwarden.ui.platform.components.header.BitwardenListHeaderTextWithSupportLabel
 import com.x8bit.bitwarden.ui.platform.components.listitem.BitwardenGroupItem
 import com.x8bit.bitwarden.ui.platform.components.model.toIconResources
@@ -50,7 +49,7 @@ fun VaultContent(
 
             item {
                 BitwardenGroupItem(
-                    startIcon = rememberVectorPainter(id = R.drawable.access_time),
+                    startIcon = rememberVectorPainter(id = R.drawable.ic_clock),
                     label = stringResource(id = R.string.verification_codes),
                     supportingLabel = state.totpItemsCount.toString(),
                     onClick = vaultHandlers.verificationCodesClick,
@@ -112,9 +111,7 @@ fun VaultContent(
             }
 
             item {
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                BitwardenHorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(all = 16.dp),
@@ -138,7 +135,7 @@ fun VaultContent(
 
         item {
             BitwardenGroupItem(
-                startIcon = rememberVectorPainter(id = R.drawable.ic_login_item),
+                startIcon = rememberVectorPainter(id = R.drawable.ic_globe),
                 startIconTestTag = "LoginCipherIcon",
                 label = stringResource(id = R.string.type_login),
                 supportingLabel = state.loginItemsCount.toString(),
@@ -153,7 +150,7 @@ fun VaultContent(
 
         item {
             BitwardenGroupItem(
-                startIcon = rememberVectorPainter(id = R.drawable.ic_card_item),
+                startIcon = rememberVectorPainter(id = R.drawable.ic_payment_card),
                 startIconTestTag = "CardCipherIcon",
                 label = stringResource(id = R.string.type_card),
                 supportingLabel = state.cardItemsCount.toString(),
@@ -168,7 +165,7 @@ fun VaultContent(
 
         item {
             BitwardenGroupItem(
-                startIcon = rememberVectorPainter(id = R.drawable.ic_identity_item),
+                startIcon = rememberVectorPainter(id = R.drawable.ic_id_card),
                 startIconTestTag = "IdentityCipherIcon",
                 label = stringResource(id = R.string.type_identity),
                 supportingLabel = state.identityItemsCount.toString(),
@@ -183,7 +180,7 @@ fun VaultContent(
 
         item {
             BitwardenGroupItem(
-                startIcon = rememberVectorPainter(id = R.drawable.ic_secure_note_item),
+                startIcon = rememberVectorPainter(id = R.drawable.ic_note),
                 startIconTestTag = "SecureNoteCipherIcon",
                 label = stringResource(id = R.string.type_secure_note),
                 supportingLabel = state.secureNoteItemsCount.toString(),
@@ -198,9 +195,7 @@ fun VaultContent(
 
         if (state.folderItems.isNotEmpty()) {
             item {
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                BitwardenHorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(all = 16.dp),
@@ -238,9 +233,7 @@ fun VaultContent(
 
         if (state.noFolderItems.isNotEmpty()) {
             item {
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                BitwardenHorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(all = 16.dp),
@@ -287,9 +280,7 @@ fun VaultContent(
 
         if (state.collectionItems.isNotEmpty()) {
             item {
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                BitwardenHorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(all = 16.dp),
@@ -308,7 +299,7 @@ fun VaultContent(
 
             items(state.collectionItems) { collection ->
                 BitwardenGroupItem(
-                    startIcon = rememberVectorPainter(id = R.drawable.ic_collection),
+                    startIcon = rememberVectorPainter(id = R.drawable.ic_collections),
                     label = collection.name,
                     supportingLabel = collection.itemCount.toString(),
                     onClick = { vaultHandlers.collectionClick(collection) },
@@ -322,9 +313,7 @@ fun VaultContent(
         }
 
         item {
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
+            BitwardenHorizontalDivider(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(all = 16.dp),

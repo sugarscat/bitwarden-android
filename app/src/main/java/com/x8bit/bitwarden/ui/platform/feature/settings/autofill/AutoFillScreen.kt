@@ -1,6 +1,7 @@
 package com.x8bit.bitwarden.ui.platform.feature.settings.autofill
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -32,10 +32,15 @@ import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.data.platform.repository.model.UriMatchType
 import com.x8bit.bitwarden.ui.platform.base.util.EventsEffect
 import com.x8bit.bitwarden.ui.platform.base.util.asText
+import com.x8bit.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
+import com.x8bit.bitwarden.ui.platform.components.badge.NotificationBadge
+import com.x8bit.bitwarden.ui.platform.components.card.BitwardenActionCard
+import com.x8bit.bitwarden.ui.platform.components.card.actionCardExitAnimation
 import com.x8bit.bitwarden.ui.platform.components.dialog.BasicDialogState
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenBasicDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenSelectionDialog
+import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenTwoButtonDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.row.BitwardenSelectionRow
 import com.x8bit.bitwarden.ui.platform.components.header.BitwardenListHeaderText
 import com.x8bit.bitwarden.ui.platform.components.row.BitwardenExternalLinkRow
@@ -46,6 +51,7 @@ import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.composition.LocalIntentManager
 import com.x8bit.bitwarden.ui.platform.feature.settings.autofill.util.displayLabel
 import com.x8bit.bitwarden.ui.platform.manager.intent.IntentManager
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Displays the auto-fill screen.
@@ -58,6 +64,7 @@ fun AutoFillScreen(
     viewModel: AutoFillViewModel = hiltViewModel(),
     intentManager: IntentManager = LocalIntentManager.current,
     onNavigateToBlockAutoFillScreen: () -> Unit,
+    onNavigateToSetupAutofill: () -> Unit,
 ) {
     val state by viewModel.stateFlow.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -66,6 +73,10 @@ fun AutoFillScreen(
     EventsEffect(viewModel = viewModel) { event ->
         when (event) {
             AutoFillEvent.NavigateBack -> onNavigateBack.invoke()
+
+            AutoFillEvent.NavigateToAccessibilitySettings -> {
+                intentManager.startSystemAccessibilitySettingsActivity()
+            }
 
             AutoFillEvent.NavigateToAutofillSettings -> {
                 val isSuccess = intentManager.startSystemAutofillSettingsActivity()
@@ -84,6 +95,8 @@ fun AutoFillScreen(
             AutoFillEvent.NavigateToSettings -> {
                 intentManager.startCredentialManagerSettings(context)
             }
+
+            AutoFillEvent.NavigateToSetupAutofill -> onNavigateToSetupAutofill()
         }
     }
 
@@ -120,6 +133,32 @@ fun AutoFillScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
+            AnimatedVisibility(
+                visible = state.showAutofillActionCard,
+                label = "AutofillActionCard",
+                exit = actionCardExitAnimation(),
+            ) {
+                BitwardenActionCard(
+                    cardTitle = stringResource(R.string.turn_on_autofill),
+                    actionText = stringResource(R.string.get_started),
+                    onActionClick = remember(viewModel) {
+                        {
+                            viewModel.trySendAction(AutoFillAction.AutoFillActionCardCtaClick)
+                        }
+                    },
+                    onDismissClick = remember(viewModel) {
+                        {
+                            viewModel.trySendAction(AutoFillAction.DismissShowAutofillActionCard)
+                        }
+                    },
+                    leadingContent = {
+                        NotificationBadge(notificationCount = 1)
+                    },
+                    modifier = Modifier
+                        .standardHorizontalMargin()
+                        .padding(top = 12.dp, bottom = 16.dp),
+                )
+            }
             BitwardenListHeaderText(
                 label = stringResource(id = R.string.autofill),
                 modifier = Modifier
@@ -171,6 +210,15 @@ fun AutoFillScreen(
                     withDivider = false,
                 )
             }
+            AccessibilityAutofillSwitch(
+                isAccessibilityAutoFillEnabled = state.isAccessibilityAutofillEnabled,
+                onCheckedChange = remember(viewModel) {
+                    { viewModel.trySendAction(AutoFillAction.UseAccessibilityAutofillClick) }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+            )
             Spacer(modifier = Modifier.height(16.dp))
             BitwardenListHeaderText(
                 label = stringResource(id = R.string.additional_options),
@@ -227,6 +275,43 @@ fun AutoFillScreen(
 }
 
 @Composable
+private fun AccessibilityAutofillSwitch(
+    isAccessibilityAutoFillEnabled: Boolean,
+    onCheckedChange: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var shouldShowDialog by rememberSaveable { mutableStateOf(value = false) }
+    BitwardenWideSwitch(
+        label = stringResource(id = R.string.accessibility),
+        description = stringResource(id = R.string.accessibility_description5),
+        isChecked = isAccessibilityAutoFillEnabled,
+        onCheckedChange = {
+            if (isAccessibilityAutoFillEnabled) {
+                onCheckedChange()
+            } else {
+                shouldShowDialog = true
+            }
+        },
+        modifier = modifier.testTag(tag = "AccessibilityAutofillSwitch"),
+    )
+
+    if (shouldShowDialog) {
+        BitwardenTwoButtonDialog(
+            title = stringResource(id = R.string.accessibility_service_disclosure),
+            message = stringResource(id = R.string.accessibility_disclosure_text),
+            confirmButtonText = stringResource(id = R.string.accept),
+            dismissButtonText = stringResource(id = R.string.decline),
+            onConfirmClick = {
+                onCheckedChange()
+                shouldShowDialog = false
+            },
+            onDismissClick = { shouldShowDialog = false },
+            onDismissRequest = { shouldShowDialog = false },
+        )
+    }
+}
+
+@Composable
 private fun DefaultUriMatchTypeRow(
     selectedUriMatchType: UriMatchType,
     onUriMatchTypeSelect: (UriMatchType) -> Unit,
@@ -242,8 +327,8 @@ private fun DefaultUriMatchTypeRow(
     ) {
         Text(
             text = selectedUriMatchType.displayLabel(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.labelSmall,
+            color = BitwardenTheme.colorScheme.text.primary,
         )
     }
 

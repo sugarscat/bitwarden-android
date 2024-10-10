@@ -28,6 +28,11 @@ interface IntentManager {
     fun startCustomTabsActivity(uri: Uri)
 
     /**
+     * Attempts to start the system accessibility settings activity.
+     */
+    fun startSystemAccessibilitySettingsActivity()
+
+    /**
      * Attempts to start the system autofill settings activity. The return value indicates whether
      * or not this was successful.
      */
@@ -114,6 +119,7 @@ interface IntentManager {
      */
     fun createFido2GetCredentialPendingIntent(
         action: String,
+        userId: String,
         credentialId: String,
         cipherId: String,
         requestCode: Int,
@@ -125,6 +131,7 @@ interface IntentManager {
      */
     fun createFido2UnlockPendingIntent(
         action: String,
+        userId: String,
         requestCode: Int,
     ): PendingIntent
 

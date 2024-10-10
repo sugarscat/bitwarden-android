@@ -1,6 +1,10 @@
 package com.x8bit.bitwarden.ui.auth.feature.accountsetup
 
+import android.os.Parcelable
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.x8bit.bitwarden.data.auth.datasource.disk.model.OnboardingStatus
+import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.platform.repository.SettingsRepository
 import com.x8bit.bitwarden.ui.platform.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -8,17 +12,32 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.parcelize.Parcelize
 import javax.inject.Inject
+
+private const val KEY_STATE = "state"
 
 /**
  * View model for the Auto-fill setup screen.
  */
 @HiltViewModel
 class SetupAutoFillViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val settingsRepository: SettingsRepository,
+    private val authRepository: AuthRepository,
 ) :
     BaseViewModel<SetupAutoFillState, SetupAutoFillEvent, SetupAutoFillAction>(
-        initialState = SetupAutoFillState(dialogState = null, autofillEnabled = false),
+        // We load the state from the savedStateHandle for testing purposes.
+        initialState = savedStateHandle[KEY_STATE] ?: run {
+            val userId = requireNotNull(authRepository.userStateFlow.value).activeUserId
+            val isInitialSetup = SetupAutoFillScreenArgs(savedStateHandle).isInitialSetup
+            SetupAutoFillState(
+                userId = userId,
+                dialogState = null,
+                autofillEnabled = false,
+                isInitialSetup = isInitialSetup,
+            )
+        },
     ) {
 
     init {
@@ -42,7 +61,13 @@ class SetupAutoFillViewModel @Inject constructor(
             is SetupAutoFillAction.Internal.AutofillEnabledUpdateReceive -> {
                 handleAutofillEnabledUpdateReceive(action)
             }
+
+            SetupAutoFillAction.CloseClick -> handleCloseClick()
         }
+    }
+
+    private fun handleCloseClick() {
+        sendEvent(SetupAutoFillEvent.NavigateBack)
     }
 
     private fun handleAutofillEnabledUpdateReceive(
@@ -72,11 +97,16 @@ class SetupAutoFillViewModel @Inject constructor(
     }
 
     private fun handleTurnOnLaterConfirmClick() {
-        sendEvent(SetupAutoFillEvent.NavigateToCompleteSetup)
+        settingsRepository.storeShowAutoFillSettingBadge(state.userId, true)
+        updateOnboardingStatusToNextStep()
     }
 
     private fun handleContinueClick() {
-        sendEvent(SetupAutoFillEvent.NavigateToCompleteSetup)
+        if (state.isInitialSetup) {
+            updateOnboardingStatusToNextStep()
+        } else {
+            sendEvent(SetupAutoFillEvent.NavigateBack)
+        }
     }
 
     private fun handleAutofillServiceChanged(action: SetupAutoFillAction.AutofillServiceChanged) {
@@ -86,28 +116,40 @@ class SetupAutoFillViewModel @Inject constructor(
             settingsRepository.disableAutofill()
         }
     }
+
+    private fun updateOnboardingStatusToNextStep() =
+        authRepository
+            .setOnboardingStatus(
+                userId = state.userId,
+                status = OnboardingStatus.FINAL_STEP,
+            )
 }
 
 /**
  * UI State for the Auto-fill setup screen.
  */
+@Parcelize
 data class SetupAutoFillState(
+    val userId: String,
     val dialogState: SetupAutoFillDialogState?,
     val autofillEnabled: Boolean,
-)
+    val isInitialSetup: Boolean,
+) : Parcelable
 
 /**
  * Dialog states for the Auto-fill setup screen.
  */
-sealed class SetupAutoFillDialogState {
+sealed class SetupAutoFillDialogState : Parcelable {
     /**
      * Represents the turn on later dialog.
      */
+    @Parcelize
     data object TurnOnLaterDialog : SetupAutoFillDialogState()
 
     /**
      * Represents the autofill fallback dialog.
      */
+    @Parcelize
     data object AutoFillFallbackDialog : SetupAutoFillDialogState()
 }
 
@@ -115,15 +157,16 @@ sealed class SetupAutoFillDialogState {
  * UI Events for the Auto-fill setup screen.
  */
 sealed class SetupAutoFillEvent {
-    /**
-     * Navigate to the complete setup screen.
-     */
-    data object NavigateToCompleteSetup : SetupAutoFillEvent()
 
     /**
      * Navigate to the autofill settings screen.
      */
     data object NavigateToAutofillSettings : SetupAutoFillEvent()
+
+    /**
+     * Navigate back.
+     */
+    data object NavigateBack : SetupAutoFillEvent()
 }
 
 /**
@@ -161,6 +204,11 @@ sealed class SetupAutoFillAction {
      * Autofill service fallback has occurred.
      */
     data object AutoFillServiceFallback : SetupAutoFillAction()
+
+    /**
+     * The user has clicked the close button.
+     */
+    data object CloseClick : SetupAutoFillAction()
 
     /**
      * Internal actions not send through UI.

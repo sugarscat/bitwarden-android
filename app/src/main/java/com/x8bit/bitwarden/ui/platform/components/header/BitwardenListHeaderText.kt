@@ -1,7 +1,6 @@
 package com.x8bit.bitwarden.ui.platform.components.header
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -22,8 +21,8 @@ fun BitwardenListHeaderText(
 ) {
     Text(
         text = label,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = BitwardenTheme.typography.labelMedium,
+        color = BitwardenTheme.colorScheme.text.secondary,
         modifier = modifier.padding(
             top = 12.dp,
             bottom = 4.dp,

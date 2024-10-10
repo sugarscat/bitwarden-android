@@ -5,8 +5,8 @@ import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.bitwarden.generators.PasswordGeneratorRequest
 import com.x8bit.bitwarden.R
+import com.x8bit.bitwarden.data.auth.datasource.disk.model.OnboardingStatus
 import com.x8bit.bitwarden.data.auth.repository.AuthRepository
-import com.x8bit.bitwarden.data.auth.repository.model.PolicyInformation
 import com.x8bit.bitwarden.data.auth.repository.model.UserState
 import com.x8bit.bitwarden.data.platform.manager.PolicyManager
 import com.x8bit.bitwarden.data.platform.manager.clipboard.BitwardenClipboardManager
@@ -182,7 +182,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
     @Test
     fun `activePolicyFlow changes should update state`() = runTest {
         val payload = mapOf(
-            "defaultType" to JsonNull,
+            "overridePasswordType" to JsonNull,
             "minLength" to JsonPrimitive(10),
             "useUpper" to JsonPrimitive(true),
             "useNumbers" to JsonPrimitive(true),
@@ -228,10 +228,10 @@ class GeneratorViewModelTest : BaseViewModelTest() {
                             specialCharsEnabled = false,
                             minNumbers = 3,
                             minNumbersAllowed = 3,
-                            maxNumbersAllowed = 5,
+                            maxNumbersAllowed = 9,
                             minSpecial = 3,
                             minSpecialAllowed = 3,
-                            maxSpecialAllowed = 5,
+                            maxSpecialAllowed = 9,
                             avoidAmbiguousChars = false,
                             ambiguousCharsEnabled = true,
                             isUserInteracting = false,
@@ -262,10 +262,10 @@ class GeneratorViewModelTest : BaseViewModelTest() {
                             specialCharsEnabled = true,
                             minNumbers = 3,
                             minNumbersAllowed = 0,
-                            maxNumbersAllowed = 5,
+                            maxNumbersAllowed = 9,
                             minSpecial = 3,
                             minSpecialAllowed = 0,
-                            maxSpecialAllowed = 5,
+                            maxSpecialAllowed = 9,
                             avoidAmbiguousChars = false,
                             ambiguousCharsEnabled = true,
                             isUserInteracting = false,
@@ -391,8 +391,6 @@ class GeneratorViewModelTest : BaseViewModelTest() {
     @Test
     fun `RegenerateClick action for passphrase state updates generatedText and saves passphrase generation options on successful passphrase generation`() =
         runTest {
-            setupMockPassphraseTypePolicy()
-
             val updatedGeneratedPassphrase = "updatedPassphrase"
 
             val viewModel = createViewModel(initialPassphraseState)
@@ -435,8 +433,6 @@ class GeneratorViewModelTest : BaseViewModelTest() {
     @Test
     fun `RegenerateClick action for passphrase state sends ShowSnackbar event on passphrase generation failure`() =
         runTest {
-            setupMockPassphraseTypePolicy()
-
             val viewModel = createViewModel(initialPassphraseState)
 
             fakeGeneratorRepository.setMockGeneratePassphraseResult(
@@ -545,7 +541,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
             isEnabled = true,
             data = JsonObject(
                 mapOf(
-                    "defaultType" to JsonNull,
+                    "overridePasswordType" to JsonNull,
                     "minLength" to JsonPrimitive(10),
                     "useUpper" to JsonPrimitive(true),
                     "useNumbers" to JsonPrimitive(true),
@@ -598,7 +594,7 @@ class GeneratorViewModelTest : BaseViewModelTest() {
             isEnabled = true,
             data = JsonObject(
                 mapOf(
-                    "defaultType" to JsonNull,
+                    "overridePasswordType" to JsonNull,
                     "minLength" to JsonPrimitive(10),
                     "useUpper" to JsonPrimitive(true),
                     "useNumbers" to JsonPrimitive(true),
@@ -637,6 +633,78 @@ class GeneratorViewModelTest : BaseViewModelTest() {
                         includeNumberEnabled = false,
                     ),
                 ),
+            ),
+            viewModel.stateFlow.value,
+        )
+    }
+
+    @Test
+    fun `Policy should overwrite passwordType if has overridePasswordType`() {
+        val policy = createMockPolicy(
+            number = 1,
+            type = PolicyTypeJson.PASSWORD_GENERATOR,
+            isEnabled = true,
+            data = JsonObject(
+                mapOf(
+                    "overridePasswordType" to JsonPrimitive("passphrase"),
+                ),
+            ),
+        )
+        every {
+            policyManager.getActivePolicies(any())
+        } returns listOf(policy)
+
+        val viewModel = createViewModel()
+
+        assertEquals(
+            initialPasscodeState.copy(
+                generatedText = "updatedPassphrase",
+                selectedType = GeneratorState.MainType.Passcode(
+                    GeneratorState.MainType.Passcode.PasscodeType.Passphrase(),
+                ),
+                overridePassword = true,
+            ),
+            viewModel.stateFlow.value,
+        )
+    }
+
+    @Test
+    fun `Policy should should prioritize password if multiple have OverridePasswordType`() {
+        val policies = listOf(
+            createMockPolicy(
+                number = 1,
+                type = PolicyTypeJson.PASSWORD_GENERATOR,
+                isEnabled = true,
+                data = JsonObject(
+                    mapOf(
+                        "overridePasswordType" to JsonPrimitive("passphrase"),
+                    ),
+                ),
+            ),
+            createMockPolicy(
+                number = 1,
+                type = PolicyTypeJson.PASSWORD_GENERATOR,
+                isEnabled = true,
+                data = JsonObject(
+                    mapOf(
+                        "overridePasswordType" to JsonPrimitive("password"),
+                    ),
+                ),
+            ),
+        )
+        every {
+            policyManager.getActivePolicies(any())
+        } returns policies
+
+        val viewModel = createViewModel()
+
+        assertEquals(
+            initialPasscodeState.copy(
+                generatedText = "defaultPassword",
+                selectedType = GeneratorState.MainType.Passcode(
+                    GeneratorState.MainType.Passcode.PasscodeType.Password(),
+                ),
+                overridePassword = true,
             ),
             viewModel.stateFlow.value,
         )
@@ -854,6 +922,113 @@ class GeneratorViewModelTest : BaseViewModelTest() {
             assertEquals(GeneratorEvent.NavigateToTooltip, event)
         }
     }
+
+    @Test
+    fun `LifecycleResumedAction should use storage options derived state over VM state`() {
+        val initialState = initialUsernameState.copy(
+            selectedType = GeneratorState.MainType.Username(
+                selectedType = GeneratorState.MainType.Username.UsernameType.PlusAddressedEmail(
+                    email = "currentEmail",
+                ),
+            ),
+        )
+        val viewModel = createViewModel(initialState)
+        fakeGeneratorRepository.saveUsernameGenerationOptions(
+            UsernameGenerationOptions(
+                type = UsernameGenerationOptions.UsernameType.RANDOM_WORD,
+            ),
+        )
+        val expectedState = initialState.copy(
+            selectedType = GeneratorState.MainType.Username(
+                selectedType = GeneratorState.MainType.Username.UsernameType.RandomWord(),
+            ),
+            generatedText = "randomWord",
+        )
+        viewModel.trySendAction(GeneratorAction.LifecycleResume)
+        assertEquals(
+            expectedState,
+            viewModel.stateFlow.value,
+        )
+    }
+
+    @Test
+    fun `LifecycleResumedAction should use passcode storage options derived state over VM state`() {
+        val initialState = initialPasscodeState
+        val viewModel = createViewModel(initialState)
+        fakeGeneratorRepository.savePasscodeGenerationOptions(
+            PasscodeGenerationOptions(
+                type = PasscodeGenerationOptions.PasscodeType.PASSPHRASE,
+                length = 14,
+                allowAmbiguousChar = false,
+                hasNumbers = false,
+                minNumber = 3,
+                hasUppercase = false,
+                minUppercase = null,
+                hasLowercase = false,
+                minLowercase = null,
+                allowSpecial = false,
+                minSpecial = 0,
+                numWords = 3,
+                wordSeparator = "-",
+                allowCapitalize = false,
+                allowIncludeNumber = false,
+            ),
+        )
+        val expectedState = initialState.copy(
+            selectedType = GeneratorState.MainType.Passcode(
+                selectedType = GeneratorState.MainType.Passcode.PasscodeType.Passphrase(
+                    numWords = 3,
+                    minNumWords = 3,
+                    maxNumWords = 20,
+                    wordSeparator = '-',
+                    capitalize = false,
+                    capitalizeEnabled = true,
+                    includeNumber = false,
+                    includeNumberEnabled = true,
+                ),
+            ),
+            generatedText = "updatedPassphrase",
+        )
+        viewModel.trySendAction(GeneratorAction.LifecycleResume)
+        assertEquals(
+            expectedState,
+            viewModel.stateFlow.value,
+        )
+    }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `No loadOptions with default arguments should use VM state options derived state over VM state`() =
+        runTest {
+            val initialState = initialUsernameState.copy(
+                selectedType = GeneratorState.MainType.Username(
+                    selectedType = GeneratorState.MainType.Username.UsernameType.PlusAddressedEmail(
+                        email = "currentEmail",
+                    ),
+                ),
+            )
+            val viewModel = createViewModel(initialState)
+            // the state is updated via the call to `loadOptions()` in the init block
+            viewModel.stateFlow.test {
+                assertEquals(
+                    initialState.copy(generatedText = "email+abcd1234@address.com"),
+                    awaitItem(),
+                )
+                // Setting the repository options to RANDOM_WORD to show this does NOT get used.
+                fakeGeneratorRepository.saveUsernameGenerationOptions(
+                    UsernameGenerationOptions(
+                        type = UsernameGenerationOptions.UsernameType.RANDOM_WORD,
+                    ),
+                )
+                // When this action is handled there will be another call to `loadOptions()`
+                // since we are using the default arguments with `shouldUseStorageOptions` set to
+                // false we should not expect a state update.
+                viewModel.trySendAction(
+                    GeneratorAction.Internal.PasswordGeneratorPolicyReceive(policies = emptyList()),
+                )
+                expectNoEvents()
+            }
+        }
 
     @Nested
     inner class PasswordActions {
@@ -1420,7 +1595,6 @@ class GeneratorViewModelTest : BaseViewModelTest() {
 
         @BeforeEach
         fun setup() {
-            setupMockPassphraseTypePolicy()
             fakeGeneratorRepository.setMockGeneratePasswordResult(
                 GeneratedPasswordResult.Success("defaultPassphrase"),
             )
@@ -2130,6 +2304,53 @@ class GeneratorViewModelTest : BaseViewModelTest() {
                 assertEquals(expectedState, viewModel.stateFlow.value)
             }
     }
+
+    @Test
+    fun `Password minimumLength should be at least as long as the sum of the minimums`() {
+        val password =
+            GeneratorState.MainType.Passcode.PasscodeType.Password(
+                length = 14,
+                minLength = 10,
+                useCapitals = true,
+                capitalsEnabled = false,
+                useLowercase = true,
+                lowercaseEnabled = false,
+                useNumbers = true,
+                numbersEnabled = false,
+                useSpecialChars = true,
+                specialCharsEnabled = false,
+                minNumbers = 9,
+                minNumbersAllowed = 3,
+                minSpecial = 9,
+                minSpecialAllowed = 3,
+                avoidAmbiguousChars = false,
+            )
+        // 9 numbers + 9 special + 1 lowercase + 1 uppercase
+        assertEquals(20, password.computedMinimumLength)
+    }
+
+    @Test
+    fun `Password minimumLength should use minLength if higher than sum of the minimums`() {
+        val password =
+            GeneratorState.MainType.Passcode.PasscodeType.Password(
+                length = 14,
+                minLength = 10,
+                useCapitals = true,
+                capitalsEnabled = false,
+                useLowercase = true,
+                lowercaseEnabled = false,
+                useNumbers = true,
+                numbersEnabled = false,
+                useSpecialChars = true,
+                specialCharsEnabled = false,
+                minNumbers = 1,
+                minNumbersAllowed = 3,
+                minSpecial = 1,
+                minSpecialAllowed = 3,
+                avoidAmbiguousChars = false,
+            )
+        assertEquals(10, password.computedMinimumLength)
+    }
     //region Helper Functions
 
     @Suppress("LongParameterList")
@@ -2366,24 +2587,6 @@ class GeneratorViewModelTest : BaseViewModelTest() {
         },
     )
 
-    private fun setupMockPassphraseTypePolicy() {
-        fakeGeneratorRepository.setMockPasswordGeneratorPolicy(
-            PolicyInformation.PasswordGenerator(
-                defaultType = "passphrase",
-                minLength = null,
-                useUpper = false,
-                useLower = false,
-                useNumbers = false,
-                useSpecial = false,
-                minNumbers = null,
-                minSpecial = null,
-                minNumberWords = null,
-                capitalize = false,
-                includeNumber = false,
-            ),
-        )
-    }
-
     //endregion Helper Functions
 }
 
@@ -2406,6 +2609,7 @@ private val DEFAULT_USER_STATE = UserState(
             trustedDevice = null,
             hasMasterPassword = true,
             isUsingKeyConnector = false,
+            onboardingStatus = OnboardingStatus.COMPLETE,
         ),
     ),
 )

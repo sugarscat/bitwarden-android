@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -38,11 +36,11 @@ import com.x8bit.bitwarden.ui.platform.components.button.BitwardenFilledButtonWi
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.x8bit.bitwarden.ui.platform.components.field.BitwardenTextField
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
+import com.x8bit.bitwarden.ui.platform.components.snackbar.BitwardenSnackbarHost
 import com.x8bit.bitwarden.ui.platform.components.text.BitwardenClickableText
 import com.x8bit.bitwarden.ui.platform.components.util.nonLetterColorVisualTransformation
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
-import com.x8bit.bitwarden.ui.platform.theme.LocalNonMaterialTypography
 
 /**
  * Top level composable for the master password generator.
@@ -102,7 +100,7 @@ fun MasterPasswordGeneratorScreen(
             )
         },
         snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
+            BitwardenSnackbarHost(hostState = snackbarHostState)
         },
     ) { innerPadding ->
         Column(
@@ -151,7 +149,7 @@ private fun MasterPasswordGeneratorContent(
             onValueChange = {},
             readOnly = true,
             shouldAddCustomLineBreaks = true,
-            textStyle = LocalNonMaterialTypography.current.sensitiveInfoSmall,
+            textStyle = BitwardenTheme.typography.sensitiveInfoSmall,
             visualTransformation = nonLetterColorVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -166,13 +164,12 @@ private fun MasterPasswordGeneratorContent(
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = stringResource(R.string.write_this_password_down_and_keep_it_somewhere_safe),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodySmall,
+            color = BitwardenTheme.colorScheme.text.primary,
         )
         BitwardenClickableText(
             label = stringResource(R.string.learn_about_other_ways_to_prevent_account_lockout),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
+            style = BitwardenTheme.typography.labelMedium,
             onClick = onLearnToPreventLockout,
             innerPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
         )
@@ -195,7 +192,6 @@ private fun MasterPasswordGeneratorTopBar(
         actions = {
             BitwardenTextButton(
                 label = stringResource(id = R.string.save),
-                labelTextColor = MaterialTheme.colorScheme.primary,
                 onClick = onSaveClick,
             )
         },

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.x8bit.bitwarden.ui.platform.components.field.BitwardenPasswordField
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Represents a Bitwarden-styled dialog for entering your master password.
@@ -58,7 +58,7 @@ fun BitwardenMasterPasswordDialog(
         title = {
             Text(
                 text = stringResource(id = R.string.password_confirmation),
-                style = MaterialTheme.typography.headlineSmall,
+                style = BitwardenTheme.typography.headlineSmall,
                 modifier = Modifier.testTag("AlertTitleText"),
             )
         },
@@ -66,7 +66,7 @@ fun BitwardenMasterPasswordDialog(
             Column {
                 Text(
                     text = stringResource(id = R.string.password_confirmation_desc),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = BitwardenTheme.typography.bodyMedium,
                     modifier = Modifier.testTag("AlertContentText"),
                 )
 
@@ -83,7 +83,11 @@ fun BitwardenMasterPasswordDialog(
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = BitwardenTheme.shapes.dialog,
+        containerColor = BitwardenTheme.colorScheme.background.primary,
+        iconContentColor = BitwardenTheme.colorScheme.icon.secondary,
+        titleContentColor = BitwardenTheme.colorScheme.text.primary,
+        textContentColor = BitwardenTheme.colorScheme.text.primary,
         modifier = Modifier.semantics {
             testTagsAsResourceId = true
             testTag = "AlertPopup"

@@ -26,12 +26,15 @@ private const val SETTINGS_ROUTE: String = "settings"
 /**
  * Add settings destinations to the nav graph.
  */
+@Suppress("LongParameterList")
 fun NavGraphBuilder.settingsGraph(
     navController: NavController,
     onNavigateToDeleteAccount: () -> Unit,
     onNavigateToExportVault: () -> Unit,
     onNavigateToFolders: () -> Unit,
     onNavigateToPendingRequests: () -> Unit,
+    onNavigateToSetupUnlockScreen: () -> Unit,
+    onNavigateToSetupAutoFillScreen: () -> Unit,
 ) {
     navigation(
         startDestination = SETTINGS_ROUTE,
@@ -54,11 +57,13 @@ fun NavGraphBuilder.settingsGraph(
             onNavigateBack = { navController.popBackStack() },
             onNavigateToDeleteAccount = onNavigateToDeleteAccount,
             onNavigateToPendingRequests = onNavigateToPendingRequests,
+            onNavigateToSetupUnlockScreen = onNavigateToSetupUnlockScreen,
         )
         appearanceDestination(onNavigateBack = { navController.popBackStack() })
         autoFillDestination(
             onNavigateBack = { navController.popBackStack() },
             onNavigateToBlockAutoFillScreen = { navController.navigateToBlockAutoFillScreen() },
+            onNavigateToSetupAutofill = onNavigateToSetupAutoFillScreen,
         )
         otherDestination(onNavigateBack = { navController.popBackStack() })
         vaultSettingsDestination(

@@ -1,11 +1,14 @@
 package com.x8bit.bitwarden.data.platform.repository
 
 import android.view.autofill.AutofillManager
+import com.bitwarden.authenticatorbridge.util.generateSecretKey
 import com.x8bit.bitwarden.BuildConfig
 import com.x8bit.bitwarden.data.auth.datasource.disk.AuthDiskSource
 import com.x8bit.bitwarden.data.auth.repository.model.PolicyInformation
 import com.x8bit.bitwarden.data.auth.repository.model.UserFingerprintResult
+import com.x8bit.bitwarden.data.auth.repository.util.activeUserIdChangesFlow
 import com.x8bit.bitwarden.data.auth.repository.util.policyInformation
+import com.x8bit.bitwarden.data.autofill.accessibility.manager.AccessibilityEnabledManager
 import com.x8bit.bitwarden.data.autofill.manager.AutofillEnabledManager
 import com.x8bit.bitwarden.data.platform.datasource.disk.SettingsDiskSource
 import com.x8bit.bitwarden.data.platform.manager.BiometricsEncryptionManager
@@ -27,6 +30,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
@@ -49,6 +54,7 @@ class SettingsRepositoryImpl(
     private val settingsDiskSource: SettingsDiskSource,
     private val vaultSdkSource: VaultSdkSource,
     private val biometricsEncryptionManager: BiometricsEncryptionManager,
+    accessibilityEnabledManager: AccessibilityEnabledManager,
     policyManager: PolicyManager,
     dispatcherManager: DispatcherManager,
 ) : SettingsRepository {
@@ -117,7 +123,9 @@ class SettingsRepositoryImpl(
                 return
             }
             // When turning on authenticator sync, get a user encryption key from the vault SDK
-            // and store it as a authenticator sync unlock key:
+            // and store it as a authenticator sync unlock key. Also, generate a
+            // symmetric sync key if needed:
+            generateSymmetricSyncKeyIfNecessary()
             unconfinedScope.launch {
                 vaultSdkSource
                     .getUserEncryptionKey(userId = userId)
@@ -293,6 +301,9 @@ class SettingsRepositoryImpl(
             )
         }
 
+    override val isAccessibilityEnabledStateFlow: StateFlow<Boolean> =
+        accessibilityEnabledManager.isAccessibilityEnabledStateFlow
+
     override val isAutofillEnabledStateFlow: StateFlow<Boolean> =
         autofillEnabledManager.isAutofillEnabledStateFlow
 
@@ -327,6 +338,60 @@ class SettingsRepositoryImpl(
                 initialValue = activeUserId
                     ?.let { settingsDiskSource.getScreenCaptureAllowed(userId = it) }
                     ?: DEFAULT_IS_SCREEN_CAPTURE_ALLOWED,
+            )
+
+    override val allSettingsBadgeCountFlow: StateFlow<Int>
+        get() = combine(
+            allSecuritySettingsBadgeCountFlow,
+            allAutofillSettingsBadgeCountFlow,
+            transform = ::sumSettingsBadgeCount,
+        )
+            .stateIn(
+                scope = unconfinedScope,
+                started = SharingStarted.Lazily,
+                initialValue = 0,
+            )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val allSecuritySettingsBadgeCountFlow: StateFlow<Int>
+        get() = authDiskSource
+            .activeUserIdChangesFlow
+            .filterNotNull()
+            .flatMapLatest {
+                // can be expanded to support multiple security settings
+                getShowUnlockBadgeFlow(userId = it)
+                    .map { showUnlockBadge ->
+                        listOf(showUnlockBadge)
+                    }
+                    .map { list ->
+                        list.count { badgeOnValue -> badgeOnValue }
+                    }
+            }
+            .stateIn(
+                scope = unconfinedScope,
+                started = SharingStarted.Lazily,
+                initialValue = 0,
+            )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val allAutofillSettingsBadgeCountFlow: StateFlow<Int>
+        get() = authDiskSource
+            .activeUserIdChangesFlow
+            .filterNotNull()
+            .flatMapLatest {
+                // Can be expanded to support multiple autofill settings
+                getShowAutofillBadgeFlow(userId = it)
+                    .map { showAutofillBadge ->
+                        listOf(showAutofillBadge)
+                    }
+                    .map { list ->
+                        list.count { showBadge -> showBadge }
+                    }
+            }
+            .stateIn(
+                scope = unconfinedScope,
+                started = SharingStarted.Lazily,
+                initialValue = 0,
             )
 
     init {
@@ -530,6 +595,42 @@ class SettingsRepositoryImpl(
         settingsDiskSource.storeUseHasLoggedInPreviously(userId)
     }
 
+    override fun getShowAutoFillSettingBadge(userId: String): Boolean =
+        settingsDiskSource.getShowAutoFillSettingBadge(userId) ?: false
+
+    override fun storeShowAutoFillSettingBadge(userId: String, showBadge: Boolean) {
+        settingsDiskSource.storeShowAutoFillSettingBadge(userId, showBadge)
+    }
+
+    override fun getShowUnlockSettingBadge(userId: String): Boolean =
+        settingsDiskSource.getShowUnlockSettingBadge(userId) ?: false
+
+    override fun storeShowUnlockSettingBadge(userId: String, showBadge: Boolean) {
+        settingsDiskSource.storeShowUnlockSettingBadge(userId, showBadge)
+    }
+
+    override fun getShowAutofillBadgeFlow(userId: String): Flow<Boolean> =
+        settingsDiskSource.getShowAutoFillSettingBadgeFlow(userId)
+            .map { it ?: false }
+
+    override fun getShowUnlockBadgeFlow(userId: String): Flow<Boolean> =
+        settingsDiskSource.getShowUnlockSettingBadgeFlow(userId)
+            .map { it ?: false }
+
+    /**
+     * If there isn't already one generated, generate a symmetric sync key that would be used
+     * for communicating via IPC.
+     */
+    private fun generateSymmetricSyncKeyIfNecessary() {
+        // If there is already an authenticator sync symmetric key, do nothing:
+        if (authDiskSource.authenticatorSyncSymmetricKey != null) {
+            return
+        }
+        // Otherwise, generate and store a key:
+        val secretKey = generateSecretKey().getOrNull() ?: return
+        authDiskSource.authenticatorSyncSymmetricKey = secretKey.encoded
+    }
+
     /**
      * Check the parameters of the vault unlock policy against the user's
      * settings to determine whether to update the user's settings.
@@ -559,6 +660,10 @@ class SettingsRepositoryImpl(
             }
         }
     }
+
+    // helper function to sum badge counts from different settings sub-menus.
+    private fun sumSettingsBadgeCount(autoFillBadgeCount: Int, securityBadgeCount: Int) =
+        autoFillBadgeCount + securityBadgeCount
 }
 
 /**

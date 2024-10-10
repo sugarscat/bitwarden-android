@@ -33,6 +33,7 @@ import com.x8bit.bitwarden.ui.vault.feature.util.toOverflowActions
 import com.x8bit.bitwarden.ui.vault.feature.vault.model.VaultFilterType
 import com.x8bit.bitwarden.ui.vault.feature.vault.util.toFilteredList
 import com.x8bit.bitwarden.ui.vault.feature.vault.util.toLoginIconData
+import com.x8bit.bitwarden.ui.vault.model.TotpData
 import java.time.Clock
 
 private const val DELETION_DATE_PATTERN: String = "MMM d, uuuu, hh:mm a"
@@ -104,6 +105,7 @@ fun VaultData.toViewState(
     autofillSelectionData: AutofillSelectionData?,
     fido2CreationData: Fido2CredentialRequest?,
     fido2CredentialAutofillViews: List<Fido2CredentialAutofillView>?,
+    totpData: TotpData?,
     isPremiumUser: Boolean,
 ): VaultItemListingState.ViewState {
     val filteredCipherViewList = cipherViewList
@@ -171,6 +173,7 @@ fun VaultData.toViewState(
                 ?.origin
                 ?.toHostOrPathOrNull()
                 ?.let { R.string.no_items_for_uri.asText(it) }
+            ?: totpData?.let { R.string.search_for_a_login_or_add_a_new_login.asText() }
             ?: run {
                 when (itemListingType) {
                     is VaultItemListingState.ItemListingType.Vault.Folder -> {
@@ -192,18 +195,22 @@ fun VaultData.toViewState(
         val shouldShowAddButton = when (itemListingType) {
             is VaultItemListingState.ItemListingType.Vault.Folder,
             VaultItemListingState.ItemListingType.Vault.Trash,
-            -> false
+                -> false
 
             else -> true
         }
         VaultItemListingState.ViewState.NoItems(
+            header = totpData
+                ?.let { R.string.no_items_for_uri.asText(it.issuer ?: it.accountName ?: "--") }
+                ?: R.string.save_and_protect_your_data.asText(),
             message = message,
             shouldShowAddButton = shouldShowAddButton,
-            buttonText = if (fido2CreationData != null) {
-                R.string.save_passkey_as_new_login.asText()
-            } else {
-                R.string.add_an_item.asText()
-            },
+            buttonText = fido2CreationData
+                ?.let { R.string.save_passkey_as_new_login.asText() }
+                ?: R.string.add_an_item.asText(),
+            vectorRes = totpData
+                ?.let { R.drawable.img_folder_question }
+                ?: R.drawable.img_vault_items,
         )
     }
 }
@@ -226,6 +233,7 @@ fun List<SendView>.toViewState(
         )
     } else {
         VaultItemListingState.ViewState.NoItems(
+            header = R.string.save_and_protect_your_data.asText(),
             message = R.string.no_items.asText(),
             shouldShowAddButton = true,
             buttonText = R.string.add_an_item.asText(),
@@ -397,8 +405,8 @@ private fun SendView.toDisplayItem(
         subtitleTestTag = "SendDateLabel",
         iconData = IconData.Local(
             iconRes = when (type) {
-                SendType.TEXT -> R.drawable.ic_send_text
-                SendType.FILE -> R.drawable.ic_send_file
+                SendType.TEXT -> R.drawable.ic_file_text
+                SendType.FILE -> R.drawable.ic_file
             },
         ),
         iconTestTag = null,
@@ -413,8 +421,8 @@ private fun SendView.toDisplayItem(
 @get:DrawableRes
 private val CipherType.iconRes: Int
     get() = when (this) {
-        CipherType.LOGIN -> R.drawable.ic_login_item
-        CipherType.SECURE_NOTE -> R.drawable.ic_secure_note_item
-        CipherType.CARD -> R.drawable.ic_card_item
-        CipherType.IDENTITY -> R.drawable.ic_identity_item
+        CipherType.LOGIN -> R.drawable.ic_globe
+        CipherType.SECURE_NOTE -> R.drawable.ic_note
+        CipherType.CARD -> R.drawable.ic_payment_card
+        CipherType.IDENTITY -> R.drawable.ic_id_card
     }

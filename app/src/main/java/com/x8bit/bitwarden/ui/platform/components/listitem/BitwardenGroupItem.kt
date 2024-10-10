@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -51,7 +50,9 @@ fun BitwardenGroupItem(
         modifier = Modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 onClick = onClick,
             )
             .bottomDivider(
@@ -70,7 +71,7 @@ fun BitwardenGroupItem(
         Icon(
             painter = startIcon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = BitwardenTheme.colorScheme.icon.primary,
             modifier = Modifier
                 .semantics { startIconTestTag?.let { testTag = it } }
                 .size(24.dp),
@@ -78,21 +79,21 @@ fun BitwardenGroupItem(
 
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.bodyLarge,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier.weight(1f),
         )
 
         Text(
             text = supportingLabel,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.labelSmall,
+            color = BitwardenTheme.colorScheme.text.primary,
         )
 
         Icon(
-            painter = rememberVectorPainter(id = R.drawable.ic_navigate_next),
+            painter = rememberVectorPainter(id = R.drawable.ic_chevron_right),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = BitwardenTheme.colorScheme.icon.primary,
             modifier = Modifier
                 .mirrorIfRtl()
                 .size(24.dp),
@@ -107,7 +108,7 @@ private fun BitwardenGroupItem_preview() {
         BitwardenGroupItem(
             label = "Sample Label",
             supportingLabel = "5",
-            startIcon = rememberVectorPainter(id = R.drawable.ic_send_text),
+            startIcon = rememberVectorPainter(id = R.drawable.ic_file_text),
             startIconTestTag = "Test Tag",
             onClick = {},
         )

@@ -15,6 +15,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.SETUP_AUTO_FILL_AS_ROOT_ROUTE
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.SETUP_COMPLETE_ROUTE
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.SETUP_UNLOCK_AS_ROOT_ROUTE
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.navigateToSetupAutoFillAsRootScreen
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.navigateToSetupCompleteScreen
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.navigateToSetupUnlockScreenAsRoot
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.setupAutoFillDestinationAsRoot
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.setupCompleteDestination
+import com.x8bit.bitwarden.ui.auth.feature.accountsetup.setupUnlockDestinationAsRoot
 import com.x8bit.bitwarden.ui.auth.feature.auth.AUTH_GRAPH_ROUTE
 import com.x8bit.bitwarden.ui.auth.feature.auth.authGraph
 import com.x8bit.bitwarden.ui.auth.feature.auth.navigateToAuthGraph
@@ -90,6 +99,9 @@ fun RootNavScreen(
         vaultUnlockDestination()
         vaultUnlockedGraph(navController)
         setupDebugMenuDestination(onNavigateBack = { navController.popBackStack() })
+        setupUnlockDestinationAsRoot()
+        setupAutoFillDestinationAsRoot()
+        setupCompleteDestination()
     }
 
     val targetRoute = when (state) {
@@ -97,7 +109,7 @@ fun RootNavScreen(
         is RootNavState.CompleteOngoingRegistration,
         RootNavState.AuthWithWelcome,
         RootNavState.ExpiredRegistrationLink,
-        -> AUTH_GRAPH_ROUTE
+            -> AUTH_GRAPH_ROUTE
 
         RootNavState.ResetPassword -> RESET_PASSWORD_ROUTE
         RootNavState.SetPassword -> SET_PASSWORD_ROUTE
@@ -109,11 +121,16 @@ fun RootNavScreen(
         is RootNavState.VaultUnlockedForAutofillSave,
         is RootNavState.VaultUnlockedForAutofillSelection,
         is RootNavState.VaultUnlockedForNewSend,
+        is RootNavState.VaultUnlockedForNewTotp,
         is RootNavState.VaultUnlockedForAuthRequest,
         is RootNavState.VaultUnlockedForFido2Save,
         is RootNavState.VaultUnlockedForFido2Assertion,
         is RootNavState.VaultUnlockedForFido2GetCredentials,
-        -> VAULT_UNLOCKED_GRAPH_ROUTE
+            -> VAULT_UNLOCKED_GRAPH_ROUTE
+
+        RootNavState.OnboardingAccountLockSetup -> SETUP_UNLOCK_AS_ROOT_ROUTE
+        RootNavState.OnboardingAutoFillSetup -> SETUP_AUTO_FILL_AS_ROOT_ROUTE
+        RootNavState.OnboardingStepsComplete -> SETUP_COMPLETE_ROUTE
     }
     val currentRoute = navController.currentDestination?.rootLevelRoute()
 
@@ -181,6 +198,14 @@ fun RootNavScreen(
                 )
             }
 
+            is RootNavState.VaultUnlockedForNewTotp -> {
+                navController.navigateToVaultUnlock(rootNavOptions)
+                navController.navigateToVaultItemListingAsRoot(
+                    vaultItemListingType = VaultItemListingType.Login,
+                    navOptions = rootNavOptions,
+                )
+            }
+
             is RootNavState.VaultUnlockedForAutofillSave -> {
                 navController.navigateToVaultUnlockedGraph(rootNavOptions)
                 navController.navigateToVaultAddEdit(
@@ -210,12 +235,24 @@ fun RootNavScreen(
             is RootNavState.VaultUnlockedForFido2Save,
             is RootNavState.VaultUnlockedForFido2Assertion,
             is RootNavState.VaultUnlockedForFido2GetCredentials,
-            -> {
+                -> {
                 navController.navigateToVaultUnlockedGraph(rootNavOptions)
                 navController.navigateToVaultItemListingAsRoot(
                     vaultItemListingType = VaultItemListingType.Login,
                     navOptions = rootNavOptions,
                 )
+            }
+
+            RootNavState.OnboardingAccountLockSetup -> {
+                navController.navigateToSetupUnlockScreenAsRoot(rootNavOptions)
+            }
+
+            RootNavState.OnboardingAutoFillSetup -> {
+                navController.navigateToSetupAutoFillAsRootScreen(rootNavOptions)
+            }
+
+            RootNavState.OnboardingStepsComplete -> {
+                navController.navigateToSetupCompleteScreen(rootNavOptions)
             }
         }
     }

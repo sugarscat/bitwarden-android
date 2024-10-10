@@ -103,6 +103,10 @@ class IntentManagerImpl(
             .launchUrl(context, uri)
     }
 
+    override fun startSystemAccessibilitySettingsActivity() {
+        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+    }
+
     override fun startSystemAutofillSettingsActivity(): Boolean =
         try {
             val intent = Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE)
@@ -254,12 +258,14 @@ class IntentManagerImpl(
 
     override fun createFido2GetCredentialPendingIntent(
         action: String,
+        userId: String,
         credentialId: String,
         cipherId: String,
         requestCode: Int,
     ): PendingIntent {
         val intent = Intent(action)
             .setPackage(context.packageName)
+            .putExtra(EXTRA_KEY_USER_ID, userId)
             .putExtra(EXTRA_KEY_CREDENTIAL_ID, credentialId)
             .putExtra(EXTRA_KEY_CIPHER_ID, cipherId)
 
@@ -273,9 +279,12 @@ class IntentManagerImpl(
 
     override fun createFido2UnlockPendingIntent(
         action: String,
+        userId: String,
         requestCode: Int,
     ): PendingIntent {
-        val intent = Intent(action).setPackage(context.packageName)
+        val intent = Intent(action)
+            .setPackage(context.packageName)
+            .putExtra(EXTRA_KEY_USER_ID, userId)
 
         return PendingIntent.getActivity(
             /* context = */ context,

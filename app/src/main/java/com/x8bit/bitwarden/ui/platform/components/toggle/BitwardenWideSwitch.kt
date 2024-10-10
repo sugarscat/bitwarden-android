@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -24,6 +23,7 @@ import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.x8bit.bitwarden.ui.platform.components.toggle.color.bitwardenSwitchColors
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
@@ -57,7 +57,9 @@ fun BitwardenWideSwitch(
             .wrapContentHeight()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 onClick = { onCheckedChange?.invoke(!isChecked) },
                 enabled = !readOnly && enabled,
             )
@@ -74,21 +76,21 @@ fun BitwardenWideSwitch(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyLarge,
+                style = BitwardenTheme.typography.bodyLarge,
                 color = if (enabled) {
-                    MaterialTheme.colorScheme.onSurface
+                    BitwardenTheme.colorScheme.text.primary
                 } else {
-                    MaterialTheme.colorScheme.outline
+                    BitwardenTheme.colorScheme.filledButton.foregroundDisabled
                 },
             )
             description?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = BitwardenTheme.typography.bodyMedium,
                     color = if (enabled) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        BitwardenTheme.colorScheme.text.secondary
                     } else {
-                        MaterialTheme.colorScheme.outline
+                        BitwardenTheme.colorScheme.filledButton.foregroundDisabled
                     },
                 )
             }
@@ -99,8 +101,10 @@ fun BitwardenWideSwitch(
         Switch(
             modifier = Modifier
                 .height(56.dp),
+            enabled = enabled,
             checked = isChecked,
             onCheckedChange = null,
+            colors = bitwardenSwitchColors(),
         )
     }
 }

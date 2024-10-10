@@ -4,12 +4,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,9 +19,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.bottomDivider
+import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconButton
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenTwoButtonDialog
-import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Attachment UI common for all item types.
@@ -41,17 +38,15 @@ fun AttachmentItemContent(
     var shouldShowSizeWarningDialog by rememberSaveable { mutableStateOf(false) }
     Row(
         modifier = modifier
-            .bottomDivider(
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
+            .bottomDivider()
             .defaultMinSize(minHeight = 56.dp)
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = attachmentItem.title,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
+            style = BitwardenTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -61,36 +56,30 @@ fun AttachmentItemContent(
 
         Text(
             text = attachmentItem.displaySize,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall,
+            color = BitwardenTheme.colorScheme.text.primary,
+            style = BitwardenTheme.typography.labelSmall,
             modifier = Modifier,
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        IconButton(
+        BitwardenStandardIconButton(
+            vectorIconRes = R.drawable.ic_download,
+            contentDescription = stringResource(id = R.string.download),
             onClick = {
                 if (!attachmentItem.isDownloadAllowed) {
                     shouldShowPremiumWarningDialog = true
-                    return@IconButton
+                    return@BitwardenStandardIconButton
                 }
 
                 if (attachmentItem.isLargeFile) {
                     shouldShowSizeWarningDialog = true
-                    return@IconButton
+                    return@BitwardenStandardIconButton
                 }
 
                 onAttachmentDownloadClick(attachmentItem)
             },
-            modifier = Modifier,
-        ) {
-            Icon(
-                painter = rememberVectorPainter(id = R.drawable.ic_download),
-                contentDescription = stringResource(id = R.string.download),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        )
     }
 
     if (shouldShowPremiumWarningDialog) {
@@ -105,10 +94,13 @@ fun AttachmentItemContent(
             text = {
                 Text(
                     text = stringResource(R.string.premium_required),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = BitwardenTheme.typography.bodyMedium,
                 )
             },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            containerColor = BitwardenTheme.colorScheme.background.primary,
+            iconContentColor = BitwardenTheme.colorScheme.icon.secondary,
+            titleContentColor = BitwardenTheme.colorScheme.text.primary,
+            textContentColor = BitwardenTheme.colorScheme.text.primary,
         )
     }
 

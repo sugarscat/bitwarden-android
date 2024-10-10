@@ -151,6 +151,15 @@ class RootNavScreenTest : BaseComposeTest() {
             )
         }
 
+        // Make sure navigating to vault unlocked for new totp works as expected:
+        rootNavStateFlow.value = RootNavState.VaultUnlockedForNewTotp(activeUserId = "userId")
+        composeTestRule.runOnIdle {
+            fakeNavHostController.assertLastNavigation(
+                route = "vault_item_listing_as_root/login",
+                navOptions = expectedNavOptions,
+            )
+        }
+
         // Make sure navigating to vault unlocked for new sends works as expected:
         rootNavStateFlow.value = RootNavState.VaultUnlockedForNewSend
         composeTestRule.runOnIdle {
@@ -225,6 +234,36 @@ class RootNavScreenTest : BaseComposeTest() {
                     navOptions = expectedNavOptions,
                 )
             }
+
+        // Make sure navigating to account lock setup works as expected:
+        rootNavStateFlow.value =
+            RootNavState.OnboardingAccountLockSetup
+        composeTestRule.runOnIdle {
+            fakeNavHostController.assertLastNavigation(
+                route = "setup_unlock_as_root/true",
+                navOptions = expectedNavOptions,
+            )
+        }
+
+        // Make sure navigating to account autofill setup works as expected:
+        rootNavStateFlow.value =
+            RootNavState.OnboardingAutoFillSetup
+        composeTestRule.runOnIdle {
+            fakeNavHostController.assertLastNavigation(
+                route = "setup_auto_fill_as_root/true",
+                navOptions = expectedNavOptions,
+            )
+        }
+
+        // Make sure navigating to account setup complete works as expected:
+        rootNavStateFlow.value =
+            RootNavState.OnboardingStepsComplete
+        composeTestRule.runOnIdle {
+            fakeNavHostController.assertLastNavigation(
+                route = "setup_complete",
+                navOptions = expectedNavOptions,
+            )
+        }
     }
 }
 

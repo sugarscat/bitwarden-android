@@ -21,7 +21,7 @@
   <string name="email_address">Email address</string>
   <string name="email_us">Email us</string>
   <string name="email_us_description">Email us directly to get help or leave feedback.</string>
-  <string name="enter_pin">Enter your PIN code.</string>
+  <string name="enter_pin">Enter your PIN code</string>
   <string name="favorites">Favorites</string>
   <string name="file_bug_report">File a bug report</string>
   <string name="file_bug_report_description">Open an issue at our GitHub repository.</string>
@@ -50,6 +50,7 @@
   <string name="account_already_added">Account already added</string>
   <string name="switch_to_already_added_account_confirmation">Would you like to switch to it now?</string>
   <string name="master_password">Master password</string>
+  <string name="master_password_required">Master password (required)</string>
   <string name="more">More</string>
   <string name="my_vault">My vault</string>
   <string name="authenticator">Authenticator</string>
@@ -166,6 +167,7 @@
   <string name="rate_the_app_description">Please consider helping us out with a good review!</string>
   <string name="regenerate_password">Regenerate password</string>
   <string name="retype_master_password">Re-type master password</string>
+  <string name="retype_master_password_required">Re-type master password (required)</string>
   <string name="search_vault">Search vault</string>
   <string name="security">Security</string>
   <string name="select">Select</string>
@@ -193,6 +195,7 @@
   <string name="translations">Translations</string>
   <string name="items_for_uri">Items for %1$s</string>
   <string name="no_items_for_uri">There are no items in your vault for %1$s.</string>
+  <string name="search_for_a_login_or_add_a_new_login">Search for a login or add a new login</string>
   <string name="bitwarden_autofill_service_overlay">When you select an input field and see a Bitwarden auto-fill overlay, you can tap it to launch the auto-fill service.</string>
   <string name="bitwarden_autofill_service_notification_content">Tap this notification to auto-fill an item from your vault.</string>
   <string name="bitwarden_autofill_service_open_accessibility_settings">Open Accessibility Settings</string>
@@ -454,6 +457,7 @@ Scanning will happen automatically.</string>
   <string name="copy_notes">Copy note</string>
   <string name="exit">Exit</string>
   <string name="exit_confirmation">Are you sure you want to exit Bitwarden?</string>
+  <string name="require_master_password_on_app_restart">Require master password on app restart?</string>
   <string name="pin_require_master_password_restart">Do you want to require unlocking with your master password when the application is restarted?</string>
   <string name="black">Black</string>
   <string name="nord">Nord</string>
@@ -534,7 +538,7 @@ Scanning will happen automatically.</string>
   <string name="privacy_policy">Privacy Policy</string>
   <string name="accessibility_draw_over_permission_alert">Bitwarden needs attention - Turn on \"Draw-Over\" in \"Auto-fill Services\" from Bitwarden Settings</string>
   <string name="passkey_management">Passkey management</string>
-  <string name="autofill_services">Auto-fill services</string>
+  <string name="autofill_services">Autofill services</string>
   <string name="inline_autofill">Use inline autofill</string>
   <string name="inline_autofill_description">Use inline autofill if your selected IME (keyboard) supports it. If your configuration is not supported (or this option is turned off), the default Autofill overlay will be used.</string>
   <string name="accessibility">Use accessibility</string>
@@ -542,6 +546,7 @@ Scanning will happen automatically.</string>
   <string name="accessibility_description2">Use the Bitwarden Accessibility Service to auto-fill your logins across apps and the web. (Requires Draw-Over to be turned on as well)</string>
   <string name="accessibility_description3">Use the Bitwarden Accessibility Service to use the Autofill Quick-Action Tile, and/or show a popup using Draw-Over (if turned on).</string>
   <string name="accessibility_description4">Required to use the Autofill Quick-Action Tile, or to augment the Autofill Service by using Draw-Over (if turned on).</string>
+  <string name="accessibility_description5">Required to use the Autofill Quick-Action Tile.</string>
   <string name="draw_over">Use draw-over</string>
   <string name="draw_over_description">Allows the Bitwarden Accessibility Service to display a popup when login fields are selected.</string>
   <string name="draw_over_description2">If turned on, the Bitwarden Accessibility Service will display a popup when login fields are selected to assist with auto-filling your logins.</string>
@@ -583,7 +588,7 @@ Scanning will happen automatically.</string>
   <string name="notes_info">Private notes about this Send.</string>
   <string name="disable_send">Deactivate this Send so that no one can access it</string>
   <string name="no_sends">There are no Sends in your account.</string>
-  <string name="add_a_send">Add a Send</string>
+  <string name="add_a_send">New send</string>
   <string name="copy_link">Copy link</string>
   <string name="share_link">Share link</string>
   <string name="send_link">Send link</string>
@@ -601,6 +606,7 @@ Scanning will happen automatically.</string>
   <string name="thirty_days">30 days</string>
   <string name="custom">Custom</string>
   <string name="share_on_save">Share this Send upon save</string>
+  <string name="add_this_authenticator_key_to_a_login">Add this authenticator key to an existing login, or create a new login.</string>
   <string name="send_disabled_warning">Due to an enterprise policy, you are only able to delete an existing Send.</string>
   <string name="about_send">About Send</string>
   <string name="hide_email">Hide my email address from recipients</string>
@@ -1001,4 +1007,15 @@ Do you want to switch to this account?</string>
   <string name="turn_on_later">Turn on later</string>
   <string name="turn_on_autofill_later">Turn on autofill later?</string>
   <string name="return_to_complete_this_step_anytime_in_settings">You can return to complete this step anytime in Settings.</string>
+  <string name="what_bitwarden_has_to_offer">You can now explore everything Bitwarden has to offer and start managing your passwords securely.</string>
+  <string name="youre_all_set">You\'re all set!</string>
+  <string name="error_connecting_with_the_duo_service_use_a_different_two_step_login_method_or_contact_duo_for_assistance">Error connecting with the Duo service. Use a different two-step login method or contact Duo for assistance.</string>
+  <string name="master_password_hint_not_specified">Master password hint</string>
+  <string name="master_password_important_hint">Important: Your master password cannot be recovered if you forget it! 12 characters minimum.</string>
+  <string name="get_started">Get started</string>
+  <string name="save_and_protect_your_data">Save and protect your data</string>
+  <string name="the_vault_protects_more_than_just_passwords">The vault protects more than just passwords. Store secure logins, IDs, cards and notes securely here.</string>
+  <string name="new_login">New login</string>
+  <string name="share_files_and_data_securely_with_anyone_on_any_platform">Share files and data securely with anyone, on any platform. Your information will remain end-to-end encrypted while limiting exposure.</string>
+  <string name="send_sensitive_information_safely">Send sensitive information, safely</string>
 </resources>

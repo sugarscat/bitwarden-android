@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -107,8 +106,8 @@ private fun ExpiredRegistrationLinkContent(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.expired_link),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.titleMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
@@ -117,8 +116,8 @@ private fun ExpiredRegistrationLinkContent(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.please_restart_registration_or_try_logging_in),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()

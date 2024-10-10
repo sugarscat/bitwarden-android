@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -23,9 +20,10 @@ import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.bottomDivider
 import com.x8bit.bitwarden.ui.platform.base.util.scrolledContainerBackground
+import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconButton
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenSelectionDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.row.BitwardenSelectionRow
-import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.ui.vault.feature.vault.model.VaultFilterType
 import kotlinx.collections.immutable.ImmutableList
 
@@ -72,7 +70,7 @@ fun VaultFilter(
     Row(
         modifier = Modifier
             .scrolledContainerBackground(topAppBarScrollBehavior)
-            .bottomDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            .bottomDivider()
             .padding(vertical = 8.dp)
             .testTag("ActiveFilterRow")
             .then(modifier),
@@ -83,8 +81,8 @@ fun VaultFilter(
                 id = R.string.vault_filter_description,
                 selectedVaultFilterType.name(),
             ),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.bodyLarge,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .testTag("ActiveFilterLabel")
                 .weight(1f),
@@ -92,15 +90,11 @@ fun VaultFilter(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        IconButton(
+        BitwardenStandardIconButton(
+            vectorIconRes = R.drawable.ic_ellipsis_horizontal,
+            contentDescription = stringResource(id = R.string.filter_by_vault),
             onClick = { shouldShowSelectionDialog = true },
-            modifier = Modifier.testTag("OpenOrgFilter"),
-        ) {
-            Icon(
-                painter = rememberVectorPainter(id = R.drawable.ic_more_horizontal),
-                contentDescription = stringResource(id = R.string.filter_by_vault),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+            modifier = Modifier.testTag(tag = "OpenOrgFilter"),
+        )
     }
 }

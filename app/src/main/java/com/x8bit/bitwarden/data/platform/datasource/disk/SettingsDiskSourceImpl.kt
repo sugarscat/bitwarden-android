@@ -33,6 +33,8 @@ private const val CRASH_LOGGING_ENABLED_KEY = "crashLoggingEnabled"
 private const val CLEAR_CLIPBOARD_INTERVAL_KEY = "clearClipboard"
 private const val INITIAL_AUTOFILL_DIALOG_SHOWN = "addSitePromptShown"
 private const val HAS_USER_LOGGED_IN_OR_CREATED_AN_ACCOUNT_KEY = "hasUserLoggedInOrCreatedAccount"
+private const val SHOW_AUTOFILL_SETTING_BADGE = "showAutofillSettingBadge"
+private const val SHOW_UNLOCK_SETTING_BADGE = "showUnlockSettingBadge"
 
 /**
  * Primary implementation of [SettingsDiskSource].
@@ -54,6 +56,12 @@ class SettingsDiskSourceImpl(
         mutableMapOf<String, MutableSharedFlow<Int?>>()
 
     private val mutablePullToRefreshEnabledFlowMap =
+        mutableMapOf<String, MutableSharedFlow<Boolean?>>()
+
+    private val mutableShowAutoFillSettingBadgeFlowMap =
+        mutableMapOf<String, MutableSharedFlow<Boolean?>>()
+
+    private val mutableShowUnlockSettingBadgeFlowMap =
         mutableMapOf<String, MutableSharedFlow<Boolean?>>()
 
     private val mutableIsIconLoadingDisabledFlow = bufferedMutableSharedFlow<Boolean?>()
@@ -332,6 +340,71 @@ class SettingsDiskSourceImpl(
         )
     }
 
+    override fun getScreenCaptureAllowed(userId: String): Boolean? {
+        return getBoolean(key = SCREEN_CAPTURE_ALLOW_KEY.appendIdentifier(userId))
+    }
+
+    override fun getScreenCaptureAllowedFlow(userId: String): Flow<Boolean?> =
+        getMutableScreenCaptureAllowedFlow(userId)
+            .onSubscription { emit(getScreenCaptureAllowed(userId)) }
+
+    override fun storeScreenCaptureAllowed(
+        userId: String,
+        isScreenCaptureAllowed: Boolean?,
+    ) {
+        putBoolean(
+            key = SCREEN_CAPTURE_ALLOW_KEY.appendIdentifier(userId),
+            value = isScreenCaptureAllowed,
+        )
+        getMutableScreenCaptureAllowedFlow(userId).tryEmit(isScreenCaptureAllowed)
+    }
+
+    override fun storeUseHasLoggedInPreviously(userId: String) {
+        putBoolean(
+            key = HAS_USER_LOGGED_IN_OR_CREATED_AN_ACCOUNT_KEY.appendIdentifier(userId),
+            value = true,
+        )
+    }
+
+    override fun getUserHasSignedInPreviously(userId: String): Boolean =
+        getBoolean(
+            key = HAS_USER_LOGGED_IN_OR_CREATED_AN_ACCOUNT_KEY.appendIdentifier(userId),
+        ) == true
+
+    override fun getShowAutoFillSettingBadge(userId: String): Boolean? =
+        getBoolean(
+            key = SHOW_AUTOFILL_SETTING_BADGE.appendIdentifier(userId),
+        )
+
+    override fun storeShowAutoFillSettingBadge(userId: String, showBadge: Boolean?) {
+        putBoolean(
+            key = SHOW_AUTOFILL_SETTING_BADGE.appendIdentifier(userId),
+            value = showBadge,
+        )
+        getMutableShowAutoFillSettingBadgeFlow(userId).tryEmit(showBadge)
+    }
+
+    override fun getShowAutoFillSettingBadgeFlow(userId: String): Flow<Boolean?> =
+        getMutableShowAutoFillSettingBadgeFlow(userId)
+            .onSubscription { emit(getShowAutoFillSettingBadge(userId)) }
+
+    override fun getShowUnlockSettingBadge(userId: String): Boolean? =
+        getBoolean(
+            key = SHOW_UNLOCK_SETTING_BADGE.appendIdentifier(userId),
+        )
+
+    override fun storeShowUnlockSettingBadge(userId: String, showBadge: Boolean?) {
+        putBoolean(
+            key = SHOW_UNLOCK_SETTING_BADGE.appendIdentifier(userId),
+            value = showBadge,
+        )
+        getMutableShowUnlockSettingBadgeFlow(userId).tryEmit(showBadge)
+    }
+
+    override fun getShowUnlockSettingBadgeFlow(userId: String): Flow<Boolean?> =
+        getMutableShowUnlockSettingBadgeFlow(userId = userId)
+            .onSubscription { emit(getShowUnlockSettingBadge(userId)) }
+
     private fun getMutableLastSyncFlow(
         userId: String,
     ): MutableSharedFlow<Instant?> =
@@ -365,34 +438,14 @@ class SettingsDiskSourceImpl(
             bufferedMutableSharedFlow(replay = 1)
         }
 
-    override fun getScreenCaptureAllowed(userId: String): Boolean? {
-        return getBoolean(key = SCREEN_CAPTURE_ALLOW_KEY.appendIdentifier(userId))
-    }
-
-    override fun getScreenCaptureAllowedFlow(userId: String): Flow<Boolean?> =
-        getMutableScreenCaptureAllowedFlow(userId)
-            .onSubscription { emit(getScreenCaptureAllowed(userId)) }
-
-    override fun storeScreenCaptureAllowed(
+    private fun getMutableShowAutoFillSettingBadgeFlow(
         userId: String,
-        isScreenCaptureAllowed: Boolean?,
-    ) {
-        putBoolean(
-            key = SCREEN_CAPTURE_ALLOW_KEY.appendIdentifier(userId),
-            value = isScreenCaptureAllowed,
-        )
-        getMutableScreenCaptureAllowedFlow(userId).tryEmit(isScreenCaptureAllowed)
+    ): MutableSharedFlow<Boolean?> = mutableShowAutoFillSettingBadgeFlowMap.getOrPut(userId) {
+        bufferedMutableSharedFlow(replay = 1)
     }
 
-    override fun storeUseHasLoggedInPreviously(userId: String) {
-        putBoolean(
-            key = HAS_USER_LOGGED_IN_OR_CREATED_AN_ACCOUNT_KEY.appendIdentifier(userId),
-            value = true,
-        )
-    }
-
-    override fun getUserHasSignedInPreviously(userId: String): Boolean =
-        getBoolean(
-            key = HAS_USER_LOGGED_IN_OR_CREATED_AN_ACCOUNT_KEY.appendIdentifier(userId),
-        ) == true
+    private fun getMutableShowUnlockSettingBadgeFlow(userId: String): MutableSharedFlow<Boolean?> =
+        mutableShowUnlockSettingBadgeFlowMap.getOrPut(userId) {
+            bufferedMutableSharedFlow(replay = 1)
+        }
 }

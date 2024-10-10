@@ -134,7 +134,14 @@ class GeneratorViewModel @Inject constructor(
             is GeneratorAction.MainTypeOptionSelect -> handleMainTypeOptionSelect(action)
             is GeneratorAction.MainType -> handleMainTypeAction(action)
             is GeneratorAction.Internal -> handleInternalAction(action)
+            GeneratorAction.LifecycleResume -> handleOnResumed()
         }
+    }
+
+    private fun handleOnResumed() {
+        // when the screen resumes we need to refresh the options for the current option from
+        // disk in the event they were changed while the screen was in the foreground.
+        loadOptions(shouldUseStorageOptions = true)
     }
 
     @Suppress("MaxLineLength")
@@ -267,20 +274,40 @@ class GeneratorViewModel @Inject constructor(
 
     //region Generation Handlers
 
-    private fun loadOptions() {
+    private fun loadOptions(shouldUseStorageOptions: Boolean = false) {
         when (val selectedType = state.selectedType) {
-            is Passcode -> loadPasscodeOptions(
-                selectedType = selectedType,
-            )
+            is Passcode -> {
+                val mainType = if (shouldUseStorageOptions) {
+                    generatorRepository
+                        .getPasscodeGenerationOptions()
+                        ?.passcodeType
+                        ?.let { Passcode(it) }
+                        ?: selectedType
+                } else {
+                    selectedType
+                }
+                loadPasscodeOptions(selectedType = mainType)
+            }
 
-            is Username -> loadUsernameOptions(
-                selectedType = selectedType,
-                forceRegeneration = selectedType.selectedType !is ForwardedEmailAlias,
-            )
+            is Username -> {
+                val mainType = if (shouldUseStorageOptions) {
+                    generatorRepository
+                        .getUsernameGenerationOptions()
+                        ?.usernameType
+                        ?.let { Username(it) }
+                        ?: selectedType
+                } else {
+                    selectedType
+                }
+                loadUsernameOptions(
+                    selectedType = mainType,
+                    forceRegeneration = mainType.selectedType !is ForwardedEmailAlias,
+                )
+            }
         }
     }
 
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private fun loadPasscodeOptions(selectedType: Passcode) {
         val options = generatorRepository.getPasscodeGenerationOptions()
             ?: generatePasscodeDefaultOptions()
@@ -288,7 +315,22 @@ class GeneratorViewModel @Inject constructor(
         val policy = policyManager
             .getActivePolicies<PolicyInformation.PasswordGenerator>()
             .toStrictestPolicy()
-        when (selectedType.selectedType) {
+
+        val passwordType = if (!policy.overridePasswordType.isNullOrBlank()) {
+            mutableStateFlow.update {
+                it.copy(overridePassword = true)
+            }
+            Passcode(
+                selectedType = policy.overridePasswordType.toSelectedType(),
+            )
+        } else {
+            mutableStateFlow.update {
+                it.copy(overridePassword = false)
+            }
+            selectedType
+        }
+
+        when (passwordType.selectedType) {
             is Passphrase -> {
                 val minNumWords = policy.minNumberWords ?: Passphrase.PASSPHRASE_MIN_NUMBER_OF_WORDS
                 val passphrase = Passphrase(
@@ -536,7 +578,7 @@ class GeneratorViewModel @Inject constructor(
             uppercase = password.useCapitals,
             numbers = password.useNumbers,
             special = password.useSpecialChars,
-            length = password.length.toUByte(),
+            length = max(password.computedMinimumLength, password.length).toUByte(),
             avoidAmbiguous = password.avoidAmbiguousChars,
             minLowercase = null,
             minUppercase = null,
@@ -737,44 +779,44 @@ class GeneratorViewModel @Inject constructor(
     ) {
         when (action) {
             is GeneratorAction.MainType.Passcode.PasscodeType.Password.SliderLengthChange,
-            -> {
+                -> {
                 handlePasswordLengthSliderChange(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Password.ToggleCapitalLettersChange,
-            -> {
+                -> {
                 handleToggleCapitalLetters(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Password.ToggleLowercaseLettersChange,
-            -> {
+                -> {
                 handleToggleLowercaseLetters(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Password.ToggleNumbersChange,
-            -> {
+                -> {
                 handleToggleNumbers(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Password
             .ToggleSpecialCharactersChange,
-            -> {
+                -> {
                 handleToggleSpecialChars(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Password.MinNumbersCounterChange,
-            -> {
+                -> {
                 handleMinNumbersChange(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Password.MinSpecialCharactersChange,
-            -> {
+                -> {
                 handleMinSpecialChange(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Password
             .ToggleAvoidAmbigousCharactersChange,
-            -> {
+                -> {
                 handleToggleAmbiguousChars(action)
             }
         }
@@ -787,7 +829,7 @@ class GeneratorViewModel @Inject constructor(
 
         updatePasswordType { currentPasswordType ->
             currentPasswordType.copy(
-                length = max(adjustedLength, currentPasswordType.minimumLength),
+                length = max(adjustedLength, currentPasswordType.computedMinimumLength),
                 isUserInteracting = action.isUserInteracting,
             )
         }
@@ -881,22 +923,22 @@ class GeneratorViewModel @Inject constructor(
     ) {
         when (action) {
             is GeneratorAction.MainType.Passcode.PasscodeType.Passphrase.NumWordsCounterChange,
-            -> {
+                -> {
                 handleNumWordsCounterChange(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Passphrase.ToggleCapitalizeChange,
-            -> {
+                -> {
                 handlePassphraseToggleCapitalizeChange(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Passphrase.ToggleIncludeNumberChange,
-            -> {
+                -> {
                 handlePassphraseToggleIncludeNumberChange(action)
             }
 
             is GeneratorAction.MainType.Passcode.PasscodeType.Passphrase.WordSeparatorTextChange,
-            -> {
+                -> {
                 handleWordSeparatorTextInputChange(action)
             }
         }
@@ -1054,7 +1096,7 @@ class GeneratorViewModel @Inject constructor(
             .ForwardedEmailAlias
             .AddyIo
             .AccessTokenTextChange,
-            -> {
+                -> {
                 handleAddyIoAccessTokenTextChange(action)
             }
 
@@ -1065,7 +1107,7 @@ class GeneratorViewModel @Inject constructor(
             .ForwardedEmailAlias
             .AddyIo
             .DomainTextChange,
-            -> {
+                -> {
                 handleAddyIoDomainNameTextChange(action)
             }
         }
@@ -1178,7 +1220,7 @@ class GeneratorViewModel @Inject constructor(
             .ForwardedEmailAlias
             .ForwardEmail
             .ApiKeyTextChange,
-            -> {
+                -> {
                 handleForwardEmailApiKeyTextChange(action)
             }
 
@@ -1189,7 +1231,7 @@ class GeneratorViewModel @Inject constructor(
             .ForwardedEmailAlias
             .ForwardEmail
             .DomainNameTextChange,
-            -> {
+                -> {
                 handleForwardEmailDomainNameTextChange(action)
             }
         }
@@ -1288,7 +1330,7 @@ class GeneratorViewModel @Inject constructor(
             .UsernameType
             .RandomWord
             .ToggleIncludeNumberChange,
-            -> {
+                -> {
                 handleRandomWordToggleIncludeNumberChange(action)
             }
         }
@@ -1435,7 +1477,10 @@ class GeneratorViewModel @Inject constructor(
     private fun updatePasswordLength() {
         updatePasswordType { currentPasswordType ->
             currentPasswordType.copy(
-                length = max(currentPasswordType.length, currentPasswordType.minimumLength),
+                length = max(
+                    currentPasswordType.length,
+                    currentPasswordType.computedMinimumLength,
+                ),
             )
         }
     }
@@ -1686,6 +1731,7 @@ data class GeneratorState(
     val currentEmailAddress: String,
     val isUnderPolicy: Boolean = false,
     val website: String? = null,
+    var overridePassword: Boolean = false,
 ) : Parcelable {
 
     /**
@@ -1810,6 +1856,22 @@ data class GeneratorState(
                     override val displayStringResId: Int
                         get() = PasscodeTypeOption.PASSWORD.labelRes
 
+                    /**
+                     * The computed minimum length for the generated Password
+                     * based on what characters must be included.
+                     */
+                    val computedMinimumLength: Int
+                        get() {
+                            val minLowercase = if (useLowercase) 1 else 0
+                            val minUppercase = if (useCapitals) 1 else 0
+                            val minimumNumbers = if (useNumbers) max(1, minNumbers) else 0
+                            val minimumSpecial = if (useSpecialChars) max(1, minSpecial) else 0
+                            return max(
+                                minLength,
+                                minLowercase + minUppercase + minimumNumbers + minimumSpecial,
+                            )
+                        }
+
                     @Suppress("UndocumentedPublicClass")
                     companion object {
                         private const val DEFAULT_PASSWORD_LENGTH: Int = 14
@@ -1819,7 +1881,7 @@ data class GeneratorState(
                         const val PASSWORD_LENGTH_SLIDER_MIN: Int = 5
                         const val PASSWORD_LENGTH_SLIDER_MAX: Int = 128
                         const val PASSWORD_COUNTER_MIN: Int = 0
-                        const val PASSWORD_COUNTER_MAX: Int = 5
+                        const val PASSWORD_COUNTER_MAX: Int = 9
                     }
                 }
 
@@ -2102,6 +2164,11 @@ data class GeneratorState(
  * the generator feature, ensuring type safety and clear, structured action definitions.
  */
 sealed class GeneratorAction {
+
+    /**
+     * Indicates the UI has been entered a resumed lifecycle state.
+     */
+    data object LifecycleResume : GeneratorAction()
 
     /**
      * Indicates that the overflow option for password history has been clicked.
@@ -2575,18 +2642,6 @@ private fun Password.enforceAtLeastOneToggleOn(): Password =
         this.copy(useLowercase = true)
     } else {
         this
-    }
-
-/**
- * The computed minimum length for the generated Password based on what characters must be included.
- */
-private val Password.minimumLength: Int
-    get() {
-        val minLowercase = if (useLowercase) 1 else 0
-        val minUppercase = if (useCapitals) 1 else 0
-        val minimumNumbers = if (useNumbers) max(1, minNumbers) else 0
-        val minimumSpecial = if (useSpecialChars) max(1, minSpecial) else 0
-        return minLowercase + minUppercase + minimumNumbers + minimumSpecial
     }
 
 private val PasscodeGenerationOptions?.passcodeType: Passcode.PasscodeType

@@ -3,6 +3,7 @@ package com.x8bit.bitwarden.ui.platform.feature.settings.autofill
 import android.os.Build
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.platform.repository.SettingsRepository
 import com.x8bit.bitwarden.data.platform.repository.model.UriMatchType
 import com.x8bit.bitwarden.data.platform.util.isBuildVersionBelow
@@ -15,6 +16,7 @@ import io.mockk.runs
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -23,7 +25,13 @@ import org.junit.jupiter.api.Test
 
 class AutoFillViewModelTest : BaseViewModelTest() {
 
+    private val mutableIsAccessibilityEnabledStateFlow = MutableStateFlow(false)
     private val mutableIsAutofillEnabledStateFlow = MutableStateFlow(false)
+
+    private val authRepository: AuthRepository = mockk {
+        every { userStateFlow.value?.activeUserId } returns "activeUserId"
+    }
+    private val mutableShowAutofillActionCardFlow = MutableStateFlow(false)
     private val settingsRepository: SettingsRepository = mockk {
         every { isInlineAutofillEnabled } returns true
         every { isInlineAutofillEnabled = any() } just runs
@@ -33,8 +41,11 @@ class AutoFillViewModelTest : BaseViewModelTest() {
         every { isAutofillSavePromptDisabled = any() } just runs
         every { defaultUriMatchType } returns UriMatchType.DOMAIN
         every { defaultUriMatchType = any() } just runs
+        every { isAccessibilityEnabledStateFlow } returns mutableIsAccessibilityEnabledStateFlow
         every { isAutofillEnabledStateFlow } returns mutableIsAutofillEnabledStateFlow
         every { disableAutofill() } just runs
+        every { getShowAutofillBadgeFlow(any()) } returns mutableShowAutofillActionCardFlow
+        every { storeShowAutoFillSettingBadge(any(), any()) } just runs
     }
 
     @BeforeEach
@@ -104,6 +115,26 @@ class AutoFillViewModelTest : BaseViewModelTest() {
     }
 
     @Test
+    fun `changes in accessibility enabled status should update the state`() {
+        val viewModel = createViewModel()
+        assertEquals(DEFAULT_STATE, viewModel.stateFlow.value)
+
+        mutableIsAccessibilityEnabledStateFlow.value = true
+
+        assertEquals(
+            DEFAULT_STATE.copy(isAccessibilityAutofillEnabled = true),
+            viewModel.stateFlow.value,
+        )
+
+        mutableIsAccessibilityEnabledStateFlow.value = false
+
+        assertEquals(
+            DEFAULT_STATE.copy(isAccessibilityAutofillEnabled = false),
+            viewModel.stateFlow.value,
+        )
+    }
+
+    @Test
     fun `changes in autofill enabled status should update the state`() {
         val viewModel = createViewModel()
         assertEquals(DEFAULT_STATE, viewModel.stateFlow.value)
@@ -149,6 +180,16 @@ class AutoFillViewModelTest : BaseViewModelTest() {
     }
 
     @Test
+    fun `on UseAccessibilityAutofillClick should emit NavigateToAccessibilitySettings`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.eventFlow.test {
+            viewModel.trySendAction(AutoFillAction.UseAccessibilityAutofillClick)
+            assertEquals(AutoFillEvent.NavigateToAccessibilitySettings, awaitItem())
+        }
+        assertEquals(DEFAULT_STATE, viewModel.stateFlow.value)
+    }
+
+    @Test
     fun `on AutoFillServicesClick with true should emit NavigateToAutofillSettings`() = runTest {
         val viewModel = createViewModel()
         viewModel.eventFlow.test {
@@ -162,6 +203,40 @@ class AutoFillViewModelTest : BaseViewModelTest() {
             DEFAULT_STATE,
             viewModel.stateFlow.value,
         )
+    }
+
+    @Test
+    fun `on AutoFillServicesClick should update show autofill in repository if card shown`() {
+        mutableShowAutofillActionCardFlow.update { true }
+        val viewModel = createViewModel()
+        assertEquals(
+            DEFAULT_STATE.copy(showAutofillActionCard = true),
+            viewModel.stateFlow.value,
+        )
+        viewModel.trySendAction(AutoFillAction.AutoFillServicesClick(true))
+        verify(exactly = 1) {
+            settingsRepository.storeShowAutoFillSettingBadge(
+                DEFAULT_STATE.activeUserId,
+                false,
+            )
+        }
+    }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `on AutoFillServicesClick should not update show autofill in repository if card not shown`() {
+        val viewModel = createViewModel()
+        assertEquals(
+            DEFAULT_STATE.copy(showAutofillActionCard = false),
+            viewModel.stateFlow.value,
+        )
+        viewModel.trySendAction(AutoFillAction.AutoFillServicesClick(true))
+        verify(exactly = 0) {
+            settingsRepository.storeShowAutoFillSettingBadge(
+                DEFAULT_STATE.activeUserId,
+                false,
+            )
+        }
     }
 
     @Test
@@ -234,20 +309,66 @@ class AutoFillViewModelTest : BaseViewModelTest() {
         }
     }
 
+    @Test
+    fun `when showAutofillBadgeFlow updates value, should update state`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.stateFlow.test {
+            assertEquals(DEFAULT_STATE, awaitItem())
+            mutableShowAutofillActionCardFlow.emit(true)
+            assertEquals(DEFAULT_STATE.copy(showAutofillActionCard = true), awaitItem())
+        }
+    }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `when AutoFillActionCardCtaClick action is sent should update show autofill in repository and send NavigateToSetupAutofill event`() =
+        runTest {
+            mutableShowAutofillActionCardFlow.update { true }
+            val viewModel = createViewModel()
+            viewModel.eventFlow.test {
+                viewModel.trySendAction(AutoFillAction.AutoFillActionCardCtaClick)
+                assertEquals(
+                    AutoFillEvent.NavigateToSetupAutofill,
+                    awaitItem(),
+                )
+            }
+            verify {
+                settingsRepository.storeShowAutoFillSettingBadge(DEFAULT_STATE.activeUserId, false)
+            }
+        }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `when DismissShowAutofillActionCard action is sent should update show autofill in repository`() {
+        mutableShowAutofillActionCardFlow.update { true }
+        val viewModel = createViewModel()
+        viewModel.trySendAction(AutoFillAction.DismissShowAutofillActionCard)
+        verify {
+            settingsRepository.storeShowAutoFillSettingBadge(
+                DEFAULT_STATE.activeUserId,
+                false,
+            )
+        }
+    }
+
     private fun createViewModel(
         state: AutoFillState? = DEFAULT_STATE,
     ): AutoFillViewModel = AutoFillViewModel(
         savedStateHandle = SavedStateHandle().apply { set("state", state) },
         settingsRepository = settingsRepository,
+        authRepository = authRepository,
     )
 }
 
 private val DEFAULT_STATE: AutoFillState = AutoFillState(
     isAskToAddLoginEnabled = false,
+    isAccessibilityAutofillEnabled = false,
     isAutoFillServicesEnabled = false,
     isCopyTotpAutomaticallyEnabled = false,
     isUseInlineAutoFillEnabled = true,
     showInlineAutofillOption = false,
     showPasskeyManagementRow = true,
     defaultUriMatchType = UriMatchType.DOMAIN,
+    showAutofillActionCard = false,
+    activeUserId = "activeUserId",
 )

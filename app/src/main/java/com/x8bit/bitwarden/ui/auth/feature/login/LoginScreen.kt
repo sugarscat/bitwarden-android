@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -53,6 +52,7 @@ import com.x8bit.bitwarden.ui.platform.components.text.BitwardenClickableText
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.composition.LocalIntentManager
 import com.x8bit.bitwarden.ui.platform.manager.intent.IntentManager
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
@@ -94,7 +94,7 @@ fun LoginScreen(
             }
 
             is LoginEvent.NavigateToTwoFactorLogin -> {
-                onNavigateToTwoFactorLogin(event.emailAddress, event.base64EncodedPassword)
+                onNavigateToTwoFactorLogin(event.emailAddress, event.password)
             }
 
             is LoginEvent.ShowToast -> {
@@ -252,7 +252,7 @@ private fun LoginScreenContent(
         BitwardenClickableText(
             label = stringResource(id = R.string.get_master_passwordword_hint),
             onClick = onMasterPasswordClick,
-            style = MaterialTheme.typography.bodySmall,
+            style = BitwardenTheme.typography.bodySmall,
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .testTag("GetMasterPasswordHintLabel"),
@@ -275,7 +275,7 @@ private fun LoginScreenContent(
         if (state.shouldShowLoginWithDevice) {
             BitwardenOutlinedButtonWithIcon(
                 label = stringResource(id = R.string.log_in_with_device),
-                icon = rememberVectorPainter(id = R.drawable.ic_device),
+                icon = rememberVectorPainter(id = R.drawable.ic_mobile),
                 onClick = onLoginWithDeviceClick,
                 modifier = Modifier
                     .testTag("LogInWithAnotherDeviceButton")
@@ -305,8 +305,8 @@ private fun LoginScreenContent(
                 state.environmentLabel,
             ),
             textAlign = TextAlign.Start,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .testTag("LoggingInAsLabel")
                 .padding(horizontal = 16.dp)
@@ -316,7 +316,7 @@ private fun LoginScreenContent(
         BitwardenClickableText(
             label = stringResource(id = R.string.not_you),
             onClick = onNotYouButtonClick,
-            style = MaterialTheme.typography.labelLarge,
+            style = BitwardenTheme.typography.labelLarge,
             innerPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
             modifier = Modifier.testTag("NotYouLabel"),
         )

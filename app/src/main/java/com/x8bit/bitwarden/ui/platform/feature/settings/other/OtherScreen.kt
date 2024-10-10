@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -45,6 +44,7 @@ import com.x8bit.bitwarden.ui.platform.components.row.BitwardenTextRow
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.toggle.BitwardenWideSwitch
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Displays the other screen.
@@ -138,12 +138,14 @@ fun OtherScreen(
             ) {
                 Text(
                     text = stringResource(id = R.string.last_sync),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = BitwardenTheme.typography.bodySmall,
+                    color = BitwardenTheme.colorScheme.text.secondary,
                     modifier = Modifier.padding(start = 16.dp, end = 2.dp),
                 )
                 Text(
                     text = state.lastSyncTime,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = BitwardenTheme.typography.bodySmall,
+                    color = BitwardenTheme.colorScheme.text.secondary,
                 )
             }
 
@@ -226,8 +228,8 @@ private fun ClearClipboardFrequencyRow(
     ) {
         Text(
             text = currentSelection.displayLabel.invoke(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.labelSmall,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier.testTag("ClearClipboardAfterLabel"),
         )
     }

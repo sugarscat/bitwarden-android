@@ -22,9 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -52,9 +50,11 @@ import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenLogoutConfirma
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenRemovalConfirmationDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenSelectionDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.row.BitwardenBasicDialogRow
+import com.x8bit.bitwarden.ui.platform.components.divider.BitwardenHorizontalDivider
 import com.x8bit.bitwarden.ui.platform.components.model.AccountSummary
 import com.x8bit.bitwarden.ui.platform.components.scrim.BitwardenAnimatedScrim
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.ui.vault.feature.vault.util.iconRes
 import com.x8bit.bitwarden.ui.vault.feature.vault.util.iconTestTag
 import com.x8bit.bitwarden.ui.vault.feature.vault.util.initials
@@ -240,10 +240,7 @@ private fun AnimatedAccountSwitcher(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                 )
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                )
+                BitwardenHorizontalDivider()
             }
             if (accountSummaries.size < MAXIMUM_ACCOUNT_LIMIT && isAddAccountAvailable) {
                 item {
@@ -276,7 +273,9 @@ private fun AccountSummaryItem(
             .testTag("AccountCell")
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 onClick = { onSwitchAccountClick(accountSummary) },
                 onLongClick = { onSwitchAccountLongClick(accountSummary) },
             )
@@ -295,7 +294,7 @@ private fun AccountSummaryItem(
 
             Text(
                 text = accountSummary.initials,
-                style = MaterialTheme.typography.titleMedium
+                style = BitwardenTheme.typography.titleMedium
                     // Do not allow scaling
                     .copy(fontSize = 16.dp.toUnscaledTextUnit()),
                 color = accountSummary.avatarColor.toSafeOverlayColor(),
@@ -310,7 +309,7 @@ private fun AccountSummaryItem(
         ) {
             Text(
                 text = accountSummary.email,
-                style = MaterialTheme.typography.bodyLarge,
+                style = BitwardenTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.testTag("AccountEmailLabel"),
@@ -318,16 +317,16 @@ private fun AccountSummaryItem(
 
             Text(
                 text = accountSummary.environmentLabel,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = BitwardenTheme.typography.bodyMedium,
+                color = BitwardenTheme.colorScheme.text.secondary,
                 modifier = Modifier.testTag("AccountEnvironmentLabel"),
             )
 
             accountSummary.supportingTextResOrNull?.let { supportingTextResId ->
                 Text(
                     text = stringResource(id = supportingTextResId).lowercaseWithCurrentLocal(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = BitwardenTheme.typography.bodyMedium,
+                    color = BitwardenTheme.colorScheme.text.secondary,
                     modifier = Modifier.testTag("AccountStatusLabel"),
                 )
             }
@@ -338,7 +337,10 @@ private fun AccountSummaryItem(
         Icon(
             painter = rememberVectorPainter(id = accountSummary.iconRes),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = when (accountSummary.status) {
+                AccountSummary.Status.ACTIVE -> BitwardenTheme.colorScheme.icon.secondary
+                else -> BitwardenTheme.colorScheme.icon.primary
+            },
             modifier = Modifier
                 .testTag(accountSummary.iconTestTag)
                 .size(24.dp),
@@ -398,7 +400,9 @@ private fun AddAccountItem(
         modifier = Modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 onClick = onClick,
             )
             .padding(vertical = 8.dp)
@@ -407,7 +411,7 @@ private fun AddAccountItem(
         Icon(
             painter = rememberVectorPainter(id = R.drawable.ic_plus),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = BitwardenTheme.colorScheme.icon.secondary,
             modifier = Modifier
                 .padding(vertical = 8.dp)
                 .size(24.dp),
@@ -417,7 +421,8 @@ private fun AddAccountItem(
 
         Text(
             text = stringResource(id = R.string.add_account),
-            style = MaterialTheme.typography.bodyLarge,
+            style = BitwardenTheme.typography.bodyLarge,
+            color = BitwardenTheme.colorScheme.text.interaction,
         )
     }
 }

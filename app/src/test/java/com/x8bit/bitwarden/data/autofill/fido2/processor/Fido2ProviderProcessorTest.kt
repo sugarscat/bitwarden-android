@@ -22,6 +22,7 @@ import androidx.credentials.provider.BeginGetPublicKeyCredentialOption
 import androidx.credentials.provider.PublicKeyCredentialEntry
 import com.bitwarden.sdk.Fido2CredentialStore
 import com.bitwarden.vault.CipherView
+import com.x8bit.bitwarden.data.auth.datasource.disk.model.OnboardingStatus
 import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.auth.repository.model.UserState
 import com.x8bit.bitwarden.data.auth.repository.model.VaultUnlockType
@@ -300,6 +301,7 @@ class Fido2ProviderProcessorTest {
         every {
             intentManager.createFido2UnlockPendingIntent(
                 action = "com.x8bit.bitwarden.fido2.ACTION_UNLOCK_ACCOUNT",
+                userId = "mockUserId-1",
                 requestCode = any(),
             )
         } returns mockIntent
@@ -316,6 +318,7 @@ class Fido2ProviderProcessorTest {
             callback.onResult(any())
             intentManager.createFido2UnlockPendingIntent(
                 action = "com.x8bit.bitwarden.fido2.ACTION_UNLOCK_ACCOUNT",
+                userId = "mockUserId-1",
                 requestCode = any(),
             )
         }
@@ -462,6 +465,7 @@ class Fido2ProviderProcessorTest {
         every {
             intentManager.createFido2GetCredentialPendingIntent(
                 action = "com.x8bit.bitwarden.fido2.ACTION_GET_PASSKEY",
+                userId = DEFAULT_USER_STATE.activeUserId,
                 credentialId = mockFido2CredentialAutofillViews.first().credentialId.toString(),
                 cipherId = mockFido2CredentialAutofillViews.first().cipherId,
                 requestCode = any(),
@@ -532,6 +536,7 @@ private fun createMockAccounts(number: Int): List<UserState.Account> {
                 vaultUnlockType = VaultUnlockType.MASTER_PASSWORD,
                 hasMasterPassword = true,
                 isUsingKeyConnector = false,
+                onboardingStatus = OnboardingStatus.COMPLETE,
             ),
         )
     }

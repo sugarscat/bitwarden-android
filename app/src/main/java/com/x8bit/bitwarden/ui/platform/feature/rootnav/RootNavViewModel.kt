@@ -2,6 +2,7 @@ package com.x8bit.bitwarden.ui.platform.feature.rootnav
 
 import android.os.Parcelable
 import androidx.lifecycle.viewModelScope
+import com.x8bit.bitwarden.data.auth.datasource.disk.model.OnboardingStatus
 import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.auth.repository.model.AuthState
 import com.x8bit.bitwarden.data.auth.repository.model.UserState
@@ -89,6 +90,19 @@ class RootNavViewModel @Inject constructor(
                 RootNavState.RemovePassword
             }
 
+            userState.activeAccount.isVaultUnlocked &&
+                userState.activeAccount.onboardingStatus != OnboardingStatus.COMPLETE -> {
+                when (userState.activeAccount.onboardingStatus) {
+                    OnboardingStatus.NOT_STARTED,
+                    OnboardingStatus.ACCOUNT_LOCK_SETUP,
+                        -> RootNavState.OnboardingAccountLockSetup
+
+                    OnboardingStatus.AUTOFILL_SETUP -> RootNavState.OnboardingAutoFillSetup
+                    OnboardingStatus.FINAL_STEP -> RootNavState.OnboardingStepsComplete
+                    OnboardingStatus.COMPLETE -> throw IllegalStateException("Should not have entered here.")
+                }
+            }
+
             userState.activeAccount.isVaultUnlocked -> {
                 when (specialCircumstance) {
                     is SpecialCircumstance.AutofillSave -> {
@@ -101,6 +115,12 @@ class RootNavViewModel @Inject constructor(
                         RootNavState.VaultUnlockedForAutofillSelection(
                             activeUserId = userState.activeAccount.userId,
                             type = specialCircumstance.autofillSelectionData.type,
+                        )
+                    }
+
+                    is SpecialCircumstance.AddTotpLoginItem -> {
+                        RootNavState.VaultUnlockedForNewTotp(
+                            activeUserId = userState.activeAccount.userId,
                         )
                     }
 
@@ -134,7 +154,7 @@ class RootNavViewModel @Inject constructor(
                     SpecialCircumstance.GeneratorShortcut,
                     SpecialCircumstance.VaultShortcut,
                     null,
-                    -> RootNavState.VaultUnlocked(activeUserId = userState.activeAccount.userId)
+                        -> RootNavState.VaultUnlocked(activeUserId = userState.activeAccount.userId)
 
                     is SpecialCircumstance.RegistrationEvent -> {
                         throw IllegalStateException(
@@ -293,6 +313,14 @@ sealed class RootNavState : Parcelable {
     ) : RootNavState()
 
     /**
+     * App should show the new verification codes listing screen for an unlocked user.
+     */
+    @Parcelize
+    data class VaultUnlockedForNewTotp(
+        val activeUserId: String,
+    ) : RootNavState()
+
+    /**
      * App should show the new send screen for an unlocked user.
      */
     @Parcelize
@@ -320,6 +348,24 @@ sealed class RootNavState : Parcelable {
      */
     @Parcelize
     data object ExpiredRegistrationLink : RootNavState()
+
+    /**
+     * App should show the set up account lock onboarding screen.
+     */
+    @Parcelize
+    data object OnboardingAccountLockSetup : RootNavState()
+
+    /**
+     * App should show the set up autofill onboarding screen.
+     */
+    @Parcelize
+    data object OnboardingAutoFillSetup : RootNavState()
+
+    /**
+     * App should show the onboarding steps complete screen.
+     */
+    @Parcelize
+    data object OnboardingStepsComplete : RootNavState()
 }
 
 /**

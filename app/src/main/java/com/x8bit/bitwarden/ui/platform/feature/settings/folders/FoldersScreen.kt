@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -38,9 +35,11 @@ import com.x8bit.bitwarden.ui.platform.base.util.bottomDivider
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
 import com.x8bit.bitwarden.ui.platform.components.content.BitwardenErrorContent
 import com.x8bit.bitwarden.ui.platform.components.content.BitwardenLoadingContent
+import com.x8bit.bitwarden.ui.platform.components.fab.BitwardenFloatingActionButton
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.feature.settings.folders.model.FolderDisplayItem
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
@@ -88,21 +87,16 @@ fun FoldersScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
+            BitwardenFloatingActionButton(
                 onClick = remember(viewModel) {
                     { viewModel.trySendAction(FoldersAction.AddFolderButtonClick) }
                 },
+                painter = rememberVectorPainter(id = R.drawable.ic_plus),
+                contentDescription = stringResource(id = R.string.add_item),
                 modifier = Modifier
-                    .testTag("AddItemButton")
+                    .testTag(tag = "AddItemButton")
                     .navigationBarsPadding(),
-            ) {
-                Icon(
-                    painter = rememberVectorPainter(id = R.drawable.ic_plus),
-                    contentDescription = stringResource(id = R.string.add_item),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
+            )
         },
     ) { innerPadding ->
         when (val viewState = state.value.viewState) {
@@ -153,8 +147,8 @@ private fun FoldersContent(
             Text(
                 text = stringResource(id = R.string.no_folders_to_list),
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.bodyMedium,
+                color = BitwardenTheme.colorScheme.text.primary,
                 modifier = Modifier.testTag("NoFoldersLabel"),
             )
         }
@@ -168,7 +162,9 @@ private fun FoldersContent(
                         .testTag("FolderCell")
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(color = MaterialTheme.colorScheme.primary),
+                            indication = ripple(
+                                color = BitwardenTheme.colorScheme.background.pressed,
+                            ),
                             onClick = { onItemClick(it.id) },
                         )
                         .bottomDivider(paddingStart = 16.dp)
@@ -183,8 +179,8 @@ private fun FoldersContent(
                             .padding(start = 16.dp)
                             .weight(1f),
                         text = it.name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = BitwardenTheme.typography.bodyLarge,
+                        color = BitwardenTheme.colorScheme.text.primary,
                     )
                 }
             }

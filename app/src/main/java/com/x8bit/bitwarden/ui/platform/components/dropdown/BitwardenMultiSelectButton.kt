@@ -8,12 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,8 +29,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.asText
+import com.x8bit.bitwarden.ui.platform.components.button.BitwardenStandardIconButton
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenSelectionDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.row.BitwardenSelectionRow
+import com.x8bit.bitwarden.ui.platform.components.field.color.bitwardenTextFieldButtonColors
 import com.x8bit.bitwarden.ui.platform.components.model.TooltipData
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
@@ -92,13 +91,15 @@ fun BitwardenMultiSelectButton(
             }
             .fillMaxWidth()
             .clickable(
-                indication = null,
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 enabled = isEnabled,
                 interactionSource = remember { MutableInteractionSource() },
             ) {
                 shouldShowDialog = !shouldShowDialog
             },
-        textStyle = MaterialTheme.typography.bodyLarge,
+        textStyle = BitwardenTheme.typography.bodyLarge,
         readOnly = true,
         label = {
             Row {
@@ -109,19 +110,14 @@ fun BitwardenMultiSelectButton(
                 )
                 tooltip?.let {
                     Spacer(modifier = Modifier.width(3.dp))
-                    IconButton(
+                    BitwardenStandardIconButton(
+                        vectorIconRes = R.drawable.ic_question_circle_small,
+                        contentDescription = it.contentDescription,
                         onClick = it.onClick,
-                        enabled = isEnabled,
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary,
-                        ),
+                        isEnabled = isEnabled,
+                        contentColor = BitwardenTheme.colorScheme.icon.secondary,
                         modifier = Modifier.size(16.dp),
-                    ) {
-                        Icon(
-                            painter = rememberVectorPainter(id = R.drawable.ic_tooltip_small),
-                            contentDescription = it.contentDescription,
-                        )
-                    }
+                    )
                 }
             }
         },
@@ -130,25 +126,17 @@ fun BitwardenMultiSelectButton(
         enabled = shouldShowDialog,
         trailingIcon = {
             Icon(
-                painter = rememberVectorPainter(id = R.drawable.ic_region_select_dropdown),
+                painter = rememberVectorPainter(id = R.drawable.ic_down_triangle),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = BitwardenTheme.colorScheme.icon.primary,
             )
         },
-        colors = OutlinedTextFieldDefaults.colors(
-            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-            disabledBorderColor = MaterialTheme.colorScheme.outline,
-            disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledSupportingTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
+        colors = bitwardenTextFieldButtonColors(),
         supportingText = supportingText?.let {
             {
                 Text(
                     text = supportingText,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = BitwardenTheme.typography.bodySmall,
                 )
             }
         },

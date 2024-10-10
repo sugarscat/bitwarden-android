@@ -1,6 +1,7 @@
 package com.x8bit.bitwarden.ui.platform.feature.debugmenu
 
 import androidx.lifecycle.viewModelScope
+import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.platform.manager.FeatureFlagManager
 import com.x8bit.bitwarden.data.platform.manager.model.FlagKey
 import com.x8bit.bitwarden.data.platform.repository.DebugMenuRepository
@@ -22,6 +23,7 @@ import javax.inject.Inject
 class DebugMenuViewModel @Inject constructor(
     featureFlagManager: FeatureFlagManager,
     private val debugMenuRepository: DebugMenuRepository,
+    private val authRepository: AuthRepository,
 ) : BaseViewModel<DebugMenuState, DebugMenuEvent, DebugMenuAction>(
     initialState = DebugMenuState(featureFlags = emptyMap()),
 ) {
@@ -44,7 +46,21 @@ class DebugMenuViewModel @Inject constructor(
             is DebugMenuAction.Internal.UpdateFeatureFlagMap -> handleUpdateFeatureFlagMap(action)
             DebugMenuAction.NavigateBack -> handleNavigateBack()
             DebugMenuAction.ResetFeatureFlagValues -> handleResetFeatureFlagValues()
+            DebugMenuAction.RestartOnboarding -> handleResetOnboardingStatus()
+            DebugMenuAction.RestartOnboardingCarousel -> handleResetOnboardingCarousel()
         }
+    }
+
+    private fun handleResetOnboardingCarousel() {
+        debugMenuRepository.modifyStateToShowOnboardingCarousel(
+            userStateUpdateTrigger = {
+                authRepository.hasPendingAccountAddition = true
+            },
+        )
+    }
+
+    private fun handleResetOnboardingStatus() {
+        debugMenuRepository.resetOnboardingStatusForCurrentUser()
     }
 
     private fun handleResetFeatureFlagValues() {
@@ -103,9 +119,19 @@ sealed class DebugMenuAction {
     data object NavigateBack : DebugMenuAction()
 
     /**
-     * The user has clicked "reset" button.
+     * The user has clicked "reset" button for the feature flag section.
      */
     data object ResetFeatureFlagValues : DebugMenuAction()
+
+    /**
+     * The user has clicked the restart onboarding button for the onboarding section.
+     */
+    data object RestartOnboarding : DebugMenuAction()
+
+    /**
+     * The user has clicked the restart onboarding button for the onboarding section.
+     */
+    data object RestartOnboardingCarousel : DebugMenuAction()
 
     /**
      * Internal actions not triggered from the UI.

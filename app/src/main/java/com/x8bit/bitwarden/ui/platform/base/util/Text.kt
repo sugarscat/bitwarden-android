@@ -4,7 +4,6 @@ import android.content.res.Resources
 import android.os.Parcelable
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.platform.LocalContext
@@ -12,6 +11,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
 
@@ -134,8 +134,8 @@ fun createAnnotatedString(
     mainString: String,
     highlights: List<String>,
     highlightStyle: SpanStyle = SpanStyle(
-        color = MaterialTheme.colorScheme.primary,
-        fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+        color = BitwardenTheme.colorScheme.text.interaction,
+        fontSize = BitwardenTheme.typography.bodyMedium.fontSize,
         fontWeight = FontWeight.Bold,
     ),
     tag: String,
@@ -144,8 +144,8 @@ fun createAnnotatedString(
         append(mainString)
         addStyle(
             style = SpanStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                color = BitwardenTheme.colorScheme.text.primary,
+                fontSize = BitwardenTheme.typography.bodyMedium.fontSize,
             ),
             start = 0,
             end = mainString.length,

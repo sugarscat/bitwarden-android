@@ -4,11 +4,14 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.data.auth.datasource.disk.model.EnvironmentUrlDataJson
+import com.x8bit.bitwarden.data.auth.datasource.disk.model.OnboardingStatus
 import com.x8bit.bitwarden.data.auth.repository.AuthRepository
 import com.x8bit.bitwarden.data.auth.repository.model.SwitchAccountResult
 import com.x8bit.bitwarden.data.auth.repository.model.UserState
 import com.x8bit.bitwarden.data.auth.repository.model.VaultUnlockType
 import com.x8bit.bitwarden.data.autofill.fido2.manager.Fido2CredentialManager
+import com.x8bit.bitwarden.data.autofill.fido2.model.createMockFido2CredentialAssertionRequest
+import com.x8bit.bitwarden.data.autofill.fido2.model.createMockFido2GetCredentialsRequest
 import com.x8bit.bitwarden.data.platform.manager.BiometricsEncryptionManager
 import com.x8bit.bitwarden.data.platform.repository.EnvironmentRepository
 import com.x8bit.bitwarden.data.platform.repository.model.Environment
@@ -215,6 +218,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
                         trustedDevice = null,
                         hasMasterPassword = true,
                         isUsingKeyConnector = false,
+                        onboardingStatus = OnboardingStatus.COMPLETE,
                     ),
                 ),
             )
@@ -253,6 +257,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
                         trustedDevice = null,
                         hasMasterPassword = true,
                         isUsingKeyConnector = false,
+                        onboardingStatus = OnboardingStatus.COMPLETE,
                     ),
                 ),
             )
@@ -379,6 +384,36 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         )
     }
 
+    @Suppress("MaxLineLength")
+    @Test
+    fun `on DismissDialog should emit Fido2GetCredentialsError when state has Fido2GetCredentialsRequest`() =
+        runTest {
+            val initialState = DEFAULT_STATE.copy(
+                fido2GetCredentialsRequest = createMockFido2GetCredentialsRequest(number = 1),
+            )
+            val viewModel = createViewModel(state = initialState)
+            viewModel.trySendAction(VaultUnlockAction.DismissDialog)
+            viewModel.eventFlow.test {
+                assertEquals(VaultUnlockEvent.Fido2GetCredentialsError, awaitItem())
+            }
+        }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `on DismissDialog should emit Fido2CredentialAssertionError when state has Fido2CredentialAssertionRequest`() =
+        runTest {
+            val initialState = DEFAULT_STATE.copy(
+                fido2CredentialAssertionRequest = createMockFido2CredentialAssertionRequest(
+                    number = 1,
+                ),
+            )
+            val viewModel = createViewModel(state = initialState)
+            viewModel.trySendAction(VaultUnlockAction.DismissDialog)
+            viewModel.eventFlow.test {
+                assertEquals(VaultUnlockEvent.Fido2CredentialAssertionError, awaitItem())
+            }
+        }
+
     @Test
     fun `on ConfirmLogoutClick should call logout on the AuthRepository`() {
         val viewModel = createViewModel()
@@ -457,7 +492,35 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
                 assertEquals(VaultUnlockEvent.PromptForBiometrics(CIPHER), awaitItem())
                 expectNoEvents()
             }
-            verify {
+            // The initial state causes this to be called as well as the change.
+            verify(exactly = 2) {
+                encryptionManager.getOrCreateCipher(USER_ID)
+            }
+        }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `switching accounts should not prompt for biometrics if new account has biometrics enabled`() =
+        runTest {
+            val account = DEFAULT_ACCOUNT.copy(
+                isVaultUnlocked = false,
+                isBiometricsEnabled = true,
+            )
+            val initialState = DEFAULT_STATE.copy(isBiometricsValid = true)
+            val viewModel = createViewModel(state = initialState)
+            mutableUserStateFlow.update {
+                it?.copy(
+                    activeUserId = account.userId,
+                    accounts = listOf(account),
+                    hasPendingAccountAddition = true,
+                )
+            }
+
+            viewModel.eventFlow.test {
+                expectNoEvents()
+            }
+            // Only the call for the initial state should be called.
+            verify(exactly = 1) {
                 encryptionManager.getOrCreateCipher(USER_ID)
             }
         }
@@ -475,6 +538,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.validation_field_required.asText(
                         initialState.vaultUnlockType.unlockScreenInputLabel,
                     ),
@@ -500,6 +564,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.invalid_master_password.asText(),
                 ),
             ),
@@ -526,6 +591,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.generic_error_message.asText(),
                 ),
             ),
@@ -552,6 +618,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.generic_error_message.asText(),
                 ),
             ),
@@ -634,6 +701,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.validation_field_required.asText(
                         initialState.vaultUnlockType.unlockScreenInputLabel,
                     ),
@@ -659,6 +727,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.invalid_pin.asText(),
                 ),
             ),
@@ -685,6 +754,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.generic_error_message.asText(),
                 ),
             ),
@@ -711,6 +781,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.generic_error_message.asText(),
                 ),
             ),
@@ -809,6 +880,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.generic_error_message.asText(),
                 ),
             ),
@@ -836,6 +908,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.generic_error_message.asText(),
                 ),
             ),
@@ -863,6 +936,7 @@ class VaultUnlockViewModelTest : BaseViewModelTest() {
         assertEquals(
             initialState.copy(
                 dialog = VaultUnlockState.VaultUnlockDialog.Error(
+                    R.string.an_error_has_occurred.asText(),
                     R.string.generic_error_message.asText(),
                 ),
             ),
@@ -1056,6 +1130,7 @@ private val DEFAULT_ACCOUNT = UserState.Account(
     trustedDevice = null,
     hasMasterPassword = true,
     isUsingKeyConnector = false,
+    onboardingStatus = OnboardingStatus.COMPLETE,
 )
 
 private val DEFAULT_USER_STATE = UserState(

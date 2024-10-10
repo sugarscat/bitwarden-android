@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -26,6 +25,7 @@ import com.x8bit.bitwarden.data.platform.repository.model.Environment
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenSelectionDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.row.BitwardenSelectionRow
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.ui.platform.util.displayLabel
 
 /**
@@ -59,7 +59,7 @@ fun EnvironmentSelector(
                 .clickable(
                     indication = ripple(
                         bounded = true,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = BitwardenTheme.colorScheme.background.pressed,
                     ),
                     interactionSource = remember { MutableInteractionSource() },
                     onClick = { shouldShowDialog = !shouldShowDialog },
@@ -72,20 +72,20 @@ fun EnvironmentSelector(
         ) {
             Text(
                 text = labelText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = BitwardenTheme.typography.bodySmall,
+                color = BitwardenTheme.colorScheme.text.primary,
                 modifier = Modifier.padding(end = 12.dp),
             )
             Text(
                 text = selectedOption.displayLabel(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                style = BitwardenTheme.typography.labelLarge,
+                color = BitwardenTheme.colorScheme.text.interaction,
                 modifier = Modifier.padding(end = 8.dp),
             )
             Icon(
-                painter = rememberVectorPainter(id = R.drawable.ic_region_select_dropdown),
+                painter = rememberVectorPainter(id = R.drawable.ic_down_triangle),
                 contentDescription = stringResource(id = R.string.region),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = BitwardenTheme.colorScheme.icon.secondary,
             )
         }
 

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -185,8 +184,8 @@ private fun TrustedDeviceScaffold(
                     state.emailAddress,
                     state.environmentLabel,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = BitwardenTheme.typography.bodyMedium,
+                color = BitwardenTheme.colorScheme.text.secondary,
                 modifier = Modifier
                     .testTag("LoggingInAsLabel")
                     .padding(horizontal = 16.dp)
@@ -196,7 +195,7 @@ private fun TrustedDeviceScaffold(
             BitwardenClickableText(
                 label = stringResource(id = R.string.not_you),
                 onClick = handlers.onNotYouButtonClick,
-                style = MaterialTheme.typography.labelLarge,
+                style = BitwardenTheme.typography.labelLarge,
                 innerPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
                 modifier = Modifier.testTag("NotYouLabel"),
             )

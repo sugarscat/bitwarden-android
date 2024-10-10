@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -18,7 +17,9 @@ import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.toSafeOverlayColor
 import com.x8bit.bitwarden.ui.platform.base.util.toUnscaledTextUnit
+import com.x8bit.bitwarden.ui.platform.components.button.color.bitwardenStandardIconButtonColors
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Displays an icon representing a Bitwarden account with the user's initials superimposed.
@@ -39,6 +40,7 @@ fun BitwardenAccountActionItem(
 
     IconButton(
         onClick = onClick,
+        colors = bitwardenStandardIconButtonColors(),
         modifier = Modifier.testTag("CurrentActiveAccount"),
     ) {
         Icon(
@@ -51,8 +53,8 @@ fun BitwardenAccountActionItem(
             style = TextStyle(
                 fontSize = 11.dp.toUnscaledTextUnit(),
                 lineHeight = 13.dp.toUnscaledTextUnit(),
-                fontFamily = FontFamily(Font(R.font.sf_pro)),
-                fontWeight = FontWeight.W400,
+                fontFamily = FontFamily(Font(R.font.dm_sans_bold)),
+                fontWeight = FontWeight.W600,
             ),
             color = color.toSafeOverlayColor(),
         )
@@ -62,12 +64,11 @@ fun BitwardenAccountActionItem(
 @Preview(showBackground = true)
 @Composable
 private fun BitwardenAccountActionItem_preview() {
-    val mockInitials = "BW"
-    val mockColor = colorResource(id = R.color.primary)
-
-    BitwardenAccountActionItem(
-        initials = mockInitials,
-        color = mockColor,
-        onClick = {},
-    )
+    BitwardenTheme {
+        BitwardenAccountActionItem(
+            initials = "BW",
+            color = BitwardenTheme.colorScheme.icon.primary,
+            onClick = {},
+        )
+    }
 }

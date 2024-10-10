@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,14 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.x8bit.bitwarden.R
+import com.x8bit.bitwarden.ui.platform.components.card.BitwardenInfoCalloutCard
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenMasterPasswordDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenTwoButtonDialog
+import com.x8bit.bitwarden.ui.platform.components.divider.BitwardenHorizontalDivider
 import com.x8bit.bitwarden.ui.platform.components.header.BitwardenListHeaderTextWithSupportLabel
 import com.x8bit.bitwarden.ui.platform.components.listitem.BitwardenGroupItem
 import com.x8bit.bitwarden.ui.platform.components.listitem.BitwardenListItem
 import com.x8bit.bitwarden.ui.platform.components.listitem.SelectionItemData
 import com.x8bit.bitwarden.ui.platform.components.model.toIconResources
-import com.x8bit.bitwarden.ui.platform.components.text.BitwardenPolicyWarningText
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.vault.feature.itemlisting.model.ListingItemOverflowAction
 import kotlinx.collections.immutable.toPersistentList
@@ -39,6 +38,7 @@ import kotlinx.collections.immutable.toPersistentList
 fun VaultItemListingContent(
     state: VaultItemListingState.ViewState.Content,
     policyDisablesSend: Boolean,
+    showAddTotpBanner: Boolean,
     collectionClick: (id: String) -> Unit,
     folderClick: (id: String) -> Unit,
     vaultItemClick: (id: String) -> Unit,
@@ -79,7 +79,7 @@ fun VaultItemListingContent(
         is ListingItemOverflowAction.VaultAction.ViewClick,
         is ListingItemOverflowAction.VaultAction.CopyTotpClick,
         null,
-        -> Unit
+            -> Unit
     }
 
     var masterPasswordRepromptData by remember { mutableStateOf<MasterPasswordRepromptData?>(null) }
@@ -102,8 +102,21 @@ fun VaultItemListingContent(
         modifier = modifier,
     ) {
         item {
+            if (showAddTotpBanner) {
+                Spacer(modifier = Modifier.height(height = 12.dp))
+                BitwardenInfoCalloutCard(
+                    text = stringResource(id = R.string.add_this_authenticator_key_to_a_login),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth(),
+                )
+            }
+        }
+
+        item {
             if (policyDisablesSend) {
-                BitwardenPolicyWarningText(
+                Spacer(modifier = Modifier.height(height = 12.dp))
+                BitwardenInfoCalloutCard(
                     text = stringResource(id = R.string.send_disabled_warning),
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -129,7 +142,7 @@ fun VaultItemListingContent(
 
             items(state.displayCollectionList) { collection ->
                 BitwardenGroupItem(
-                    startIcon = rememberVectorPainter(id = R.drawable.ic_collection),
+                    startIcon = rememberVectorPainter(id = R.drawable.ic_collections),
                     label = collection.name,
                     supportingLabel = collection.count.toString(),
                     onClick = { collectionClick(collection.id) },
@@ -172,9 +185,7 @@ fun VaultItemListingContent(
 
         if (state.shouldShowDivider) {
             item {
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                BitwardenHorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(all = 16.dp),

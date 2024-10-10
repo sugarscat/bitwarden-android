@@ -2,6 +2,8 @@ package com.x8bit.bitwarden.data.autofill.fido2.manager
 
 import androidx.credentials.provider.CallingAppInfo
 import com.bitwarden.fido.ClientData
+import com.bitwarden.fido.Origin
+import com.bitwarden.fido.UnverifiedAssetLink
 import com.bitwarden.sdk.Fido2CredentialStore
 import com.bitwarden.vault.CipherView
 import com.x8bit.bitwarden.data.autofill.fido2.datasource.network.model.DigitalAssetLinkResponseJson
@@ -14,9 +16,7 @@ import com.x8bit.bitwarden.data.autofill.fido2.model.Fido2ValidateOriginResult
 import com.x8bit.bitwarden.data.autofill.fido2.model.PasskeyAssertionOptions
 import com.x8bit.bitwarden.data.autofill.fido2.model.PasskeyAttestationOptions
 import com.x8bit.bitwarden.data.platform.manager.AssetManager
-import com.x8bit.bitwarden.data.platform.util.asFailure
-import com.x8bit.bitwarden.data.platform.util.asSuccess
-import com.x8bit.bitwarden.data.platform.util.flatMap
+import com.x8bit.bitwarden.data.platform.util.decodeFromStringOrNull
 import com.x8bit.bitwarden.data.platform.util.getAppOrigin
 import com.x8bit.bitwarden.data.platform.util.getAppSigningSignatureFingerprint
 import com.x8bit.bitwarden.data.platform.util.getSignatureFingerprintAsHexString
@@ -26,11 +26,13 @@ import com.x8bit.bitwarden.data.vault.datasource.sdk.model.AuthenticateFido2Cred
 import com.x8bit.bitwarden.data.vault.datasource.sdk.model.RegisterFido2CredentialRequest
 import com.x8bit.bitwarden.data.vault.datasource.sdk.util.toAndroidAttestationResponse
 import com.x8bit.bitwarden.data.vault.datasource.sdk.util.toAndroidFido2PublicKeyCredential
+import com.x8bit.bitwarden.ui.platform.base.util.toHostOrPathOrNull
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private const val ALLOW_LIST_FILE_NAME = "fido2_privileged_allow_list.json"
+private const val GOOGLE_ALLOW_LIST_FILE_NAME = "fido2_privileged_google.json"
+private const val COMMUNITY_ALLOW_LIST_FILE_NAME = "fido2_privileged_community.json"
 
 /**
  * Primary implementation of [Fido2CredentialManager].
@@ -67,11 +69,23 @@ class Fido2CredentialManagerImpl(
                     .packageName,
             )
         }
-        val origin = fido2CredentialRequest
+        val assetLinkUrl = fido2CredentialRequest
             .origin
             ?: getOriginUrlFromAttestationOptionsOrNull(fido2CredentialRequest.requestJson)
             ?: return Fido2RegisterCredentialResult.Error
 
+        val origin = Origin.Android(
+            UnverifiedAssetLink(
+                packageName = fido2CredentialRequest.packageName,
+                sha256CertFingerprint = fido2CredentialRequest
+                    .callingAppInfo
+                    .getSignatureFingerprintAsHexString()
+                    ?: return Fido2RegisterCredentialResult.Error,
+                host = assetLinkUrl.toHostOrPathOrNull()
+                    ?: return Fido2RegisterCredentialResult.Error,
+                assetLinkUrl = assetLinkUrl,
+            ),
+        )
         return vaultSdkSource
             .registerFido2Credential(
                 request = RegisterFido2CredentialRequest(
@@ -95,13 +109,13 @@ class Fido2CredentialManagerImpl(
     }
 
     override suspend fun validateOrigin(
-        fido2CredentialRequest: Fido2CredentialRequest,
+        callingAppInfo: CallingAppInfo,
+        relyingPartyId: String,
     ): Fido2ValidateOriginResult {
-        val callingAppInfo = fido2CredentialRequest.callingAppInfo
         return if (callingAppInfo.isOriginPopulated()) {
             validatePrivilegedAppOrigin(callingAppInfo)
         } else {
-            validateCallingApplicationAssetLinks(fido2CredentialRequest)
+            validateCallingApplicationAssetLinks(callingAppInfo, relyingPartyId)
         }
     }
 
@@ -136,40 +150,62 @@ class Fido2CredentialManagerImpl(
         val clientData = request.clientDataHash
             ?.let { ClientData.DefaultWithCustomHash(hash = it) }
             ?: ClientData.DefaultWithExtraData(androidPackageName = callingAppInfo.getAppOrigin())
-        val origin = request.origin
+        val origin = callingAppInfo.origin
             ?: getOriginUrlFromAssertionOptionsOrNull(request.requestJson)
             ?: return Fido2CredentialAssertionResult.Error
+        val relyingPartyId = json
+            .decodeFromStringOrNull<PasskeyAssertionOptions>(request.requestJson)
+            ?.relyingPartyId
+            ?: return Fido2CredentialAssertionResult.Error
 
-        return vaultSdkSource
-            .authenticateFido2Credential(
-                request = AuthenticateFido2CredentialRequest(
-                    userId = userId,
-                    origin = origin,
-                    requestJson = """{"publicKey": ${request.requestJson}}""",
-                    clientData = clientData,
-                    selectedCipherView = selectedCipherView,
-                    isUserVerificationSupported = true,
-                ),
-                fido2CredentialStore = this,
-            )
-            .map { it.toAndroidFido2PublicKeyCredential() }
-            .mapCatching { json.encodeToString(it) }
-            .fold(
-                onSuccess = { Fido2CredentialAssertionResult.Success(it) },
-                onFailure = { Fido2CredentialAssertionResult.Error },
-            )
+        val validateOriginResult = validateOrigin(
+            callingAppInfo = callingAppInfo,
+            relyingPartyId = relyingPartyId,
+        )
+
+        return when (validateOriginResult) {
+            is Fido2ValidateOriginResult.Error -> {
+                Fido2CredentialAssertionResult.Error
+            }
+
+            Fido2ValidateOriginResult.Success -> {
+                vaultSdkSource
+                    .authenticateFido2Credential(
+                        request = AuthenticateFido2CredentialRequest(
+                            userId = userId,
+                            origin = Origin.Android(
+                                UnverifiedAssetLink(
+                                    callingAppInfo.packageName,
+                                    callingAppInfo.getSignatureFingerprintAsHexString()
+                                        ?: return Fido2CredentialAssertionResult.Error,
+                                    origin.toHostOrPathOrNull()
+                                        ?: return Fido2CredentialAssertionResult.Error,
+                                    origin,
+                                ),
+                            ),
+                            requestJson = """{"publicKey": ${request.requestJson}}""",
+                            clientData = clientData,
+                            selectedCipherView = selectedCipherView,
+                            isUserVerificationSupported = true,
+                        ),
+                        fido2CredentialStore = this,
+                    )
+                    .map { it.toAndroidFido2PublicKeyCredential() }
+                    .mapCatching { json.encodeToString(it) }
+                    .fold(
+                        onSuccess = { Fido2CredentialAssertionResult.Success(it) },
+                        onFailure = { Fido2CredentialAssertionResult.Error },
+                    )
+            }
+        }
     }
 
     private suspend fun validateCallingApplicationAssetLinks(
-        fido2CredentialRequest: Fido2CredentialRequest,
+        callingAppInfo: CallingAppInfo,
+        relyingPartyId: String,
     ): Fido2ValidateOriginResult {
-        val callingAppInfo = fido2CredentialRequest.callingAppInfo
-        return fido2CredentialRequest
-            .requestJson
-            .getRpId(json)
-            .flatMap { rpId ->
-                digitalAssetLinkService.getDigitalAssetLinkForRp(relyingParty = rpId)
-            }
+        return digitalAssetLinkService
+            .getDigitalAssetLinkForRp(relyingParty = relyingPartyId)
             .onFailure {
                 return Fido2ValidateOriginResult.Error.AssetLinkNotFound
             }
@@ -181,7 +217,8 @@ class Fido2CredentialManagerImpl(
                     ?: return Fido2ValidateOriginResult.Error.ApplicationNotFound
             }
             .map { matchingStatements ->
-                callingAppInfo.getSignatureFingerprintAsHexString()
+                callingAppInfo
+                    .getSignatureFingerprintAsHexString()
                     ?.let { certificateFingerprint ->
                         matchingStatements
                             .filterMatchingAppSignaturesOrNull(
@@ -202,9 +239,46 @@ class Fido2CredentialManagerImpl(
 
     private suspend fun validatePrivilegedAppOrigin(
         callingAppInfo: CallingAppInfo,
+    ): Fido2ValidateOriginResult {
+        val googleAllowListResult =
+            validatePrivilegedAppSignatureWithGoogleList(callingAppInfo)
+        return when (googleAllowListResult) {
+            is Fido2ValidateOriginResult.Success -> {
+                // Application was found and successfully validated against the Google allow list so
+                // we can return the result as the final validation result.
+                googleAllowListResult
+            }
+
+            is Fido2ValidateOriginResult.Error -> {
+                // Check the community allow list if the Google allow list failed, and return the
+                // result as the final validation result.
+                validatePrivilegedAppSignatureWithCommunityList(callingAppInfo)
+            }
+        }
+    }
+
+    private suspend fun validatePrivilegedAppSignatureWithGoogleList(
+        callingAppInfo: CallingAppInfo,
+    ): Fido2ValidateOriginResult =
+        validatePrivilegedAppSignatureWithAllowList(
+            callingAppInfo = callingAppInfo,
+            fileName = GOOGLE_ALLOW_LIST_FILE_NAME,
+        )
+
+    private suspend fun validatePrivilegedAppSignatureWithCommunityList(
+        callingAppInfo: CallingAppInfo,
+    ): Fido2ValidateOriginResult =
+        validatePrivilegedAppSignatureWithAllowList(
+            callingAppInfo = callingAppInfo,
+            fileName = COMMUNITY_ALLOW_LIST_FILE_NAME,
+        )
+
+    private suspend fun validatePrivilegedAppSignatureWithAllowList(
+        callingAppInfo: CallingAppInfo,
+        fileName: String,
     ): Fido2ValidateOriginResult =
         assetManager
-            .readAsset(ALLOW_LIST_FILE_NAME)
+            .readAsset(fileName)
             .map { allowList ->
                 callingAppInfo.validatePrivilegedApp(
                     allowList = allowList,
@@ -246,20 +320,6 @@ class Fido2CredentialManagerImpl(
                 ?: false
         }
             .takeUnless { it.isEmpty() }
-
-    private fun String.getRpId(json: Json): Result<String> {
-        return try {
-            json
-                .decodeFromString<PasskeyAttestationOptions>(this)
-                .relyingParty
-                .id
-                .asSuccess()
-        } catch (e: SerializationException) {
-            e.asFailure()
-        } catch (e: IllegalArgumentException) {
-            e.asFailure()
-        }
-    }
 
     override fun hasAuthenticationAttemptsRemaining(): Boolean =
         authenticationAttempts < MAX_AUTHENTICATION_ATTEMPTS

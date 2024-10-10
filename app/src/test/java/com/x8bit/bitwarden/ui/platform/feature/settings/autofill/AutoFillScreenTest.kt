@@ -35,6 +35,7 @@ class AutoFillScreenTest : BaseComposeTest() {
     private var isSystemSettingsRequestSuccess = false
     private var onNavigateBackCalled = false
     private var onNavigateToBlockAutoFillScreenCalled = false
+    private var onNavigateToSetupAutoFillScreenCalled = false
 
     private val mutableEventFlow = bufferedMutableSharedFlow<AutoFillEvent>()
     private val mutableStateFlow = MutableStateFlow(DEFAULT_STATE)
@@ -45,6 +46,7 @@ class AutoFillScreenTest : BaseComposeTest() {
     private val intentManager: IntentManager = mockk {
         every { startSystemAutofillSettingsActivity() } answers { isSystemSettingsRequestSuccess }
         every { startCredentialManagerSettings(any()) } just runs
+        every { startSystemAccessibilitySettingsActivity() } just runs
     }
 
     @Before
@@ -55,7 +57,17 @@ class AutoFillScreenTest : BaseComposeTest() {
                 onNavigateToBlockAutoFillScreen = { onNavigateToBlockAutoFillScreenCalled = true },
                 viewModel = viewModel,
                 intentManager = intentManager,
+                onNavigateToSetupAutofill = { onNavigateToSetupAutoFillScreenCalled = true },
             )
+        }
+    }
+
+    @Test
+    fun `on NavigateToAccessibilitySettings should attempt to navigate to system settings`() {
+        mutableEventFlow.tryEmit(AutoFillEvent.NavigateToAccessibilitySettings)
+
+        verify(exactly = 1) {
+            intentManager.startSystemAccessibilitySettingsActivity()
         }
     }
 
@@ -106,6 +118,71 @@ class AutoFillScreenTest : BaseComposeTest() {
         composeTestRule.assertNoDialogExists()
     }
 
+    @Suppress("MaxLineLength")
+    @Test
+    fun `on use accessibility click with accessibility already enabled should emit UseAccessibilityAutofillClick`() {
+        mutableStateFlow.update { it.copy(isAccessibilityAutofillEnabled = true) }
+        composeTestRule
+            .onNodeWithText(text = "Use accessibility")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule.assertNoDialogExists()
+        verify(exactly = 1) {
+            viewModel.trySendAction(AutoFillAction.UseAccessibilityAutofillClick)
+        }
+    }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `on use accessibility click with accessibility already disabled should display disclosure dialog and declining closes the dialog`() {
+        mutableStateFlow.update { it.copy(isAccessibilityAutofillEnabled = false) }
+        composeTestRule
+            .onNodeWithText(text = "Use accessibility")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule
+            .onAllNodesWithText(text = "Accessibility Service Disclosure")
+            .filterToOne(hasAnyAncestor(isDialog()))
+            .assertIsDisplayed()
+        composeTestRule
+            .onAllNodesWithText(text = "Decline")
+            .filterToOne(hasAnyAncestor(isDialog()))
+            .assertIsDisplayed()
+            .performClick()
+        composeTestRule.assertNoDialogExists()
+
+        verify(exactly = 0) {
+            viewModel.trySendAction(AutoFillAction.UseAccessibilityAutofillClick)
+        }
+    }
+
+    @Suppress("MaxLineLength")
+    @Test
+    fun `on use accessibility click with accessibility already disabled should display disclosure dialog and accepting closes the dialog and emits UseAccessibilityAutofillClick`() {
+        mutableStateFlow.update { it.copy(isAccessibilityAutofillEnabled = false) }
+        composeTestRule
+            .onNodeWithText(text = "Use accessibility")
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule
+            .onAllNodesWithText(text = "Accessibility Service Disclosure")
+            .filterToOne(hasAnyAncestor(isDialog()))
+            .assertIsDisplayed()
+        composeTestRule
+            .onAllNodesWithText(text = "Accept")
+            .filterToOne(hasAnyAncestor(isDialog()))
+            .assertIsDisplayed()
+            .performClick()
+        composeTestRule.assertNoDialogExists()
+
+        verify(exactly = 1) {
+            viewModel.trySendAction(AutoFillAction.UseAccessibilityAutofillClick)
+        }
+    }
+
     @Test
     fun `on autofill settings fallback dialog Ok click should dismiss the dialog`() {
         isSystemSettingsRequestSuccess = false
@@ -123,7 +200,7 @@ class AutoFillScreenTest : BaseComposeTest() {
     @Test
     fun `on auto fill services toggle should send AutoFillServicesClick`() {
         composeTestRule
-            .onNodeWithText("Auto-fill services")
+            .onNodeWithText("Autofill services")
             .performScrollTo()
             .performClick()
         verify { viewModel.trySendAction(AutoFillAction.AutoFillServicesClick(true)) }
@@ -132,12 +209,12 @@ class AutoFillScreenTest : BaseComposeTest() {
     @Test
     fun `auto fill services should be toggled on or off according to state`() {
         composeTestRule
-            .onNodeWithText("Auto-fill services")
+            .onNodeWithText("Autofill services")
             .performScrollTo()
             .assertIsOff()
         mutableStateFlow.update { it.copy(isAutoFillServicesEnabled = true) }
         composeTestRule
-            .onNodeWithText("Auto-fill services")
+            .onNodeWithText("Autofill services")
             .performScrollTo()
             .assertIsOn()
     }
@@ -387,14 +464,59 @@ class AutoFillScreenTest : BaseComposeTest() {
         mutableEventFlow.tryEmit(AutoFillEvent.NavigateToBlockAutoFill)
         assertTrue(onNavigateToBlockAutoFillScreenCalled)
     }
+
+    @Test
+    fun `autofill action card should show when state is true and hide when false`() {
+        composeTestRule
+            .onNodeWithText("Get started")
+            .assertDoesNotExist()
+        mutableStateFlow.update { DEFAULT_STATE.copy(showAutofillActionCard = true) }
+        composeTestRule
+            .onNodeWithText("Get started")
+            .assertIsDisplayed()
+        mutableStateFlow.update { DEFAULT_STATE.copy(showAutofillActionCard = false) }
+        composeTestRule
+            .onNodeWithText("Get started")
+            .assertDoesNotExist()
+    }
+
+    @Test
+    fun `when autofill card is visible clicking the cta button should send correct action`() {
+        mutableStateFlow.update { DEFAULT_STATE.copy(showAutofillActionCard = true) }
+        composeTestRule
+            .onNodeWithText("Get started")
+            .performScrollTo()
+            .performClick()
+
+        verify { viewModel.trySendAction(AutoFillAction.AutoFillActionCardCtaClick) }
+    }
+
+    @Test
+    fun `when autofill action card is visible clicking dismissing should send correct action`() {
+        mutableStateFlow.update { DEFAULT_STATE.copy(showAutofillActionCard = true) }
+        composeTestRule
+            .onNodeWithContentDescription("Close")
+            .performScrollTo()
+            .performClick()
+        verify { viewModel.trySendAction(AutoFillAction.DismissShowAutofillActionCard) }
+    }
+
+    @Test
+    fun `when NavigateToSetupAutofill event is sent should call onNavigateToSetupAutofill`() {
+        mutableEventFlow.tryEmit(AutoFillEvent.NavigateToSetupAutofill)
+        assertTrue(onNavigateToSetupAutoFillScreenCalled)
+    }
 }
 
 private val DEFAULT_STATE: AutoFillState = AutoFillState(
     isAskToAddLoginEnabled = false,
+    isAccessibilityAutofillEnabled = false,
     isAutoFillServicesEnabled = false,
     isCopyTotpAutomaticallyEnabled = false,
     isUseInlineAutoFillEnabled = false,
     showInlineAutofillOption = true,
     showPasskeyManagementRow = true,
     defaultUriMatchType = UriMatchType.DOMAIN,
+    showAutofillActionCard = false,
+    activeUserId = "activeUserId",
 )

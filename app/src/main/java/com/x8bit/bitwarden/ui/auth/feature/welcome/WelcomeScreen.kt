@@ -22,7 +22,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +44,7 @@ import com.x8bit.bitwarden.ui.platform.components.button.BitwardenFilledButton
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 import com.x8bit.bitwarden.ui.platform.util.isPortrait
 
 /**
@@ -77,6 +77,8 @@ fun WelcomeScreen(
 
     BitwardenScaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = BitwardenTheme.colorScheme.background.secondary,
+        contentColor = BitwardenTheme.colorScheme.text.secondary,
     ) { innerPadding ->
         WelcomeScreenContent(
             state = state,
@@ -189,16 +191,16 @@ private fun WelcomeCardLandscape(
             Text(
                 text = stringResource(id = state.titleRes),
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.headlineMedium,
+                color = BitwardenTheme.colorScheme.text.primary,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
 
             Text(
                 text = stringResource(id = state.messageRes),
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.bodyLarge,
+                color = BitwardenTheme.colorScheme.text.primary,
             )
         }
     }
@@ -222,8 +224,8 @@ private fun WelcomeCardPortrait(
         Text(
             text = stringResource(id = state.titleRes),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.headlineMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .padding(
                     top = 48.dp,
@@ -234,8 +236,8 @@ private fun WelcomeCardPortrait(
         Text(
             text = stringResource(id = state.messageRes),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.bodyLarge,
+            color = BitwardenTheme.colorScheme.text.primary,
         )
     }
 }
@@ -254,11 +256,9 @@ private fun IndicatorDots(
     ) {
         items(totalCount) { index ->
             val color = animateColorAsState(
-                targetValue = if (index == selectedIndexProvider()) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                },
+                targetValue = BitwardenTheme.colorScheme.text.primary.copy(
+                    alpha = if (index == selectedIndexProvider()) 1.0f else 0.3f,
+                ),
                 label = "dotColor",
             )
 

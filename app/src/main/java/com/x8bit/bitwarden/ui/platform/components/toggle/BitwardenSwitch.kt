@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -23,6 +22,8 @@ import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.x8bit.bitwarden.ui.platform.components.toggle.color.bitwardenSwitchColors
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Represents a Bitwarden-styled [Switch].
@@ -49,7 +50,9 @@ fun BitwardenSwitch(
                 if (onCheckedChange != null) {
                     this.clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(color = MaterialTheme.colorScheme.primary),
+                        indication = ripple(
+                            color = BitwardenTheme.colorScheme.background.pressed,
+                        ),
                         onClick = { onCheckedChange.invoke(!isChecked) },
                     )
                 } else {
@@ -68,6 +71,7 @@ fun BitwardenSwitch(
                 .width(52.dp),
             checked = isChecked,
             onCheckedChange = null,
+            colors = bitwardenSwitchColors(),
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -77,15 +81,15 @@ fun BitwardenSwitch(
 
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = BitwardenTheme.typography.bodyLarge,
+                color = BitwardenTheme.colorScheme.text.primary,
             )
 
             description?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = BitwardenTheme.typography.bodyMedium,
+                    color = BitwardenTheme.colorScheme.text.secondary,
                 )
             }
 

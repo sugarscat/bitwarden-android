@@ -1,7 +1,6 @@
 package com.x8bit.bitwarden.ui.auth.feature.accountsetup
 
 import android.content.res.Configuration
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,15 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -37,11 +38,13 @@ import com.x8bit.bitwarden.ui.platform.base.util.EventsEffect
 import com.x8bit.bitwarden.ui.platform.base.util.asText
 import com.x8bit.bitwarden.ui.platform.base.util.standardHorizontalMargin
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
+import com.x8bit.bitwarden.ui.platform.components.appbar.NavigationIcon
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenFilledButton
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.x8bit.bitwarden.ui.platform.components.dialog.BasicDialogState
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenBasicDialog
 import com.x8bit.bitwarden.ui.platform.components.dialog.BitwardenTwoButtonDialog
+import com.x8bit.bitwarden.ui.platform.components.image.BitwardenGifImage
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.toggle.BitwardenWideSwitch
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
@@ -57,7 +60,7 @@ import com.x8bit.bitwarden.ui.platform.util.isPortrait
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetupAutoFillScreen(
-    onNavigateToCompleteSetup: () -> Unit,
+    onNavigateBack: () -> Unit,
     intentManager: IntentManager = LocalIntentManager.current,
     viewModel: SetupAutoFillViewModel = hiltViewModel(),
 ) {
@@ -65,13 +68,14 @@ fun SetupAutoFillScreen(
     val handler = rememberSetupAutoFillHandler(viewModel = viewModel)
     EventsEffect(viewModel = viewModel) { event ->
         when (event) {
-            SetupAutoFillEvent.NavigateToCompleteSetup -> onNavigateToCompleteSetup()
             SetupAutoFillEvent.NavigateToAutofillSettings -> {
                 val showFallback = !intentManager.startSystemAutofillSettingsActivity()
                 if (showFallback) {
                     handler.sendAutoFillServiceFallback.invoke()
                 }
             }
+
+            SetupAutoFillEvent.NavigateBack -> onNavigateBack()
         }
     }
     when (state.dialogState) {
@@ -107,14 +111,32 @@ fun SetupAutoFillScreen(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             BitwardenTopAppBar(
-                title = stringResource(id = R.string.account_setup),
+                title = stringResource(
+                    id = if (state.isInitialSetup) {
+                        R.string.account_setup
+                    } else {
+                        R.string.turn_on_autofill
+                    },
+                ),
                 scrollBehavior = scrollBehavior,
-                navigationIcon = null,
+                navigationIcon = if (state.isInitialSetup) {
+                    null
+                } else {
+                    NavigationIcon(
+                        navigationIcon = rememberVectorPainter(id = R.drawable.ic_close),
+                        navigationIconContentDescription = stringResource(id = R.string.close),
+                        onNavigationIconClick = remember(viewModel) {
+                            {
+                                viewModel.trySendAction(SetupAutoFillAction.CloseClick)
+                            }
+                        },
+                    )
+                },
             )
         },
     ) { innerPadding ->
         SetupAutoFillContent(
-            autofillEnabled = state.autofillEnabled,
+            state = state,
             onAutofillServiceChanged = { handler.onAutofillServiceChanged(it) },
             onContinueClick = handler.onContinueClick,
             onTurnOnLaterClick = handler.onTurnOnLaterClick,
@@ -129,7 +151,7 @@ fun SetupAutoFillScreen(
 @Suppress("LongMethod")
 @Composable
 private fun SetupAutoFillContent(
-    autofillEnabled: Boolean,
+    state: SetupAutoFillState,
     onAutofillServiceChanged: (Boolean) -> Unit,
     onContinueClick: () -> Unit,
     onTurnOnLaterClick: () -> Unit,
@@ -138,6 +160,7 @@ private fun SetupAutoFillContent(
     Column(
         modifier = modifier,
     ) {
+        Spacer(Modifier.height(8.dp))
         SetupAutoFillContentHeader(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
@@ -148,7 +171,7 @@ private fun SetupAutoFillContent(
             label = stringResource(
                 R.string.autofill_services,
             ),
-            isChecked = autofillEnabled,
+            isChecked = state.autofillEnabled,
             onCheckedChange = onAutofillServiceChanged,
             modifier = Modifier
                 .fillMaxWidth()
@@ -163,13 +186,15 @@ private fun SetupAutoFillContent(
                 .standardHorizontalMargin(),
         )
         Spacer(modifier = Modifier.height(12.dp))
-        BitwardenTextButton(
-            label = stringResource(R.string.turn_on_later),
-            onClick = onTurnOnLaterClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .standardHorizontalMargin(),
-        )
+        if (state.isInitialSetup) {
+            BitwardenTextButton(
+                label = stringResource(R.string.turn_on_later),
+                onClick = onTurnOnLaterClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .standardHorizontalMargin(),
+            )
+        }
         Spacer(modifier = Modifier.navigationBarsPadding())
     }
 }
@@ -198,10 +223,21 @@ private fun SetupAutoFillContentHeader(
 
 @Composable
 private fun OrderedHeaderContent() {
-    // Animated Image placeholder TODO PM-10843
-    Image(
-        painter = rememberVectorPainter(id = R.drawable.account_setup),
-        contentDescription = null,
+    BitwardenGifImage(
+        resId = R.drawable.img_setup_autofill,
+        modifier = Modifier
+            .clip(
+                RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = 0.dp,
+                    bottomEnd = 0.dp,
+                ),
+            )
+            .size(
+                width = 230.dp,
+                height = 280.dp,
+            ),
     )
     Spacer(modifier = Modifier.size(24.dp))
     Column(
@@ -209,15 +245,15 @@ private fun OrderedHeaderContent() {
     ) {
         Text(
             text = stringResource(R.string.turn_on_autofill),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.titleMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.use_autofill_to_log_into_your_accounts),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             textAlign = TextAlign.Center,
             // Apply similar line breaks to design
             modifier = Modifier.sizeIn(maxWidth = 300.dp),
@@ -230,7 +266,12 @@ private fun OrderedHeaderContent() {
 private fun SetupAutoFillContentDisabled_preview() {
     BitwardenTheme {
         SetupAutoFillContent(
-            autofillEnabled = false,
+            state = SetupAutoFillState(
+                userId = "disputationi",
+                dialogState = null,
+                autofillEnabled = false,
+                isInitialSetup = true,
+            ),
             onAutofillServiceChanged = {},
             onContinueClick = {},
             onTurnOnLaterClick = {},
@@ -243,7 +284,12 @@ private fun SetupAutoFillContentDisabled_preview() {
 private fun SetupAutoFillContentEnabled_preview() {
     BitwardenTheme {
         SetupAutoFillContent(
-            autofillEnabled = true,
+            state = SetupAutoFillState(
+                userId = "disputationi",
+                dialogState = null,
+                autofillEnabled = true,
+                isInitialSetup = true,
+            ),
             onAutofillServiceChanged = {},
             onContinueClick = {},
             onTurnOnLaterClick = {},

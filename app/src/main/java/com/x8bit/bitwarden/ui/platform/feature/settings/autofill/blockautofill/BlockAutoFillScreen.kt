@@ -3,10 +3,10 @@ package com.x8bit.bitwarden.ui.platform.feature.settings.autofill.blockautofill
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,12 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -44,8 +40,11 @@ import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.base.util.EventsEffect
 import com.x8bit.bitwarden.ui.platform.base.util.bottomDivider
 import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
+import com.x8bit.bitwarden.ui.platform.components.button.BitwardenFilledTonalButton
+import com.x8bit.bitwarden.ui.platform.components.fab.BitwardenFloatingActionButton
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Displays the block auto-fill screen.
@@ -132,19 +131,14 @@ fun BlockAutoFillScreen(
                 enter = scaleIn(),
                 exit = scaleOut(),
             ) {
-                FloatingActionButton(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                BitwardenFloatingActionButton(
                     onClick = remember(viewModel) {
                         { viewModel.trySendAction(BlockAutoFillAction.AddUriClick) }
                     },
-                    modifier = Modifier.testTag("AddItemButton"),
-                ) {
-                    Icon(
-                        painter = rememberVectorPainter(id = R.drawable.ic_plus),
-                        contentDescription = stringResource(id = R.string.add_item),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
+                    painter = rememberVectorPainter(id = R.drawable.ic_plus),
+                    contentDescription = stringResource(id = R.string.add_item),
+                    modifier = Modifier.testTag(tag = "AddItemButton"),
+                )
             }
         },
     ) { innerPadding ->
@@ -167,8 +161,8 @@ fun BlockAutoFillScreen(
                                 text = stringResource(
                                     id = R.string.auto_fill_will_not_be_offered_for_these_ur_is,
                                 ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.bodyMedium,
+                                color = BitwardenTheme.colorScheme.text.primary,
+                                style = BitwardenTheme.typography.bodyMedium,
                                 modifier = Modifier.align(Alignment.CenterVertically),
                             )
                         }
@@ -221,24 +215,13 @@ private fun BlockAutoFillNoItems(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                painter = rememberVectorPainter(
-                    id = R.drawable.ic_blocked_uri_background,
-                ),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.surfaceVariant,
-            )
-
-            Icon(
-                painter = rememberVectorPainter(
-                    id = R.drawable.ic_blocked_uri_foreground,
-                ),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-            )
-        }
-
+        Image(
+            painter = rememberVectorPainter(
+                id = R.drawable.blocked_uri,
+            ),
+            contentDescription = null,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
@@ -247,26 +230,18 @@ private fun BlockAutoFillNoItems(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             text = stringResource(id = R.string.auto_fill_will_not_be_offered_for_these_ur_is),
-            style = MaterialTheme.typography.bodyMedium,
+            style = BitwardenTheme.typography.bodyMedium,
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
+        BitwardenFilledTonalButton(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
+            label = stringResource(id = R.string.new_blocked_uri),
             onClick = addItemClickAction,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            ),
-        ) {
-            Text(
-                text = stringResource(id = R.string.new_blocked_uri),
-                style = MaterialTheme.typography.labelLarge,
-            )
-        }
+        )
     }
 }
 
@@ -280,7 +255,9 @@ private fun BlockAutoFillListItem(
         modifier = Modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                indication = ripple(
+                    color = BitwardenTheme.colorScheme.background.pressed,
+                ),
                 onClick = onClick,
             )
             .bottomDivider(paddingStart = 16.dp)
@@ -295,13 +272,13 @@ private fun BlockAutoFillListItem(
                 .padding(end = 16.dp)
                 .weight(1f),
             text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = BitwardenTheme.typography.bodyLarge,
+            color = BitwardenTheme.colorScheme.text.primary,
         )
         Icon(
-            painter = rememberVectorPainter(id = R.drawable.ic_edit_alt),
+            painter = rememberVectorPainter(id = R.drawable.ic_pencil_square),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = BitwardenTheme.colorScheme.icon.primary,
             modifier = Modifier.size(24.dp),
         )
     }

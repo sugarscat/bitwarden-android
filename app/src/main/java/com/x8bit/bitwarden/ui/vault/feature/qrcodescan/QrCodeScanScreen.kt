@@ -25,11 +25,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -58,6 +58,9 @@ import com.x8bit.bitwarden.ui.platform.components.appbar.BitwardenTopAppBar
 import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.text.BitwardenClickableText
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
+import com.x8bit.bitwarden.ui.platform.theme.LocalBitwardenColorScheme
+import com.x8bit.bitwarden.ui.platform.theme.color.darkBitwardenColorScheme
 import com.x8bit.bitwarden.ui.platform.util.isPortrait
 import com.x8bit.bitwarden.ui.vault.feature.qrcodescan.util.QrCodeAnalyzer
 import com.x8bit.bitwarden.ui.vault.feature.qrcodescan.util.QrCodeAnalyzerImpl
@@ -104,39 +107,43 @@ fun QrCodeScanScreen(
             }
         }
     }
-
-    BitwardenScaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            BitwardenTopAppBar(
-                title = stringResource(id = R.string.scan_qr_code),
-                navigationIcon = rememberVectorPainter(id = R.drawable.ic_close),
-                navigationIconContentDescription = stringResource(id = R.string.close),
-                onNavigationIconClick = remember(viewModel) {
-                    { viewModel.trySendAction(QrCodeScanAction.CloseClick) }
-                },
-                scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState()),
-            )
-        },
-    ) { innerPadding ->
-        CameraPreview(
-            cameraErrorReceive = remember(viewModel) {
-                { viewModel.trySendAction(QrCodeScanAction.CameraSetupErrorReceive) }
+    // This screen should always look like it's in dark mode
+    CompositionLocalProvider(LocalBitwardenColorScheme provides darkBitwardenColorScheme) {
+        BitwardenScaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                BitwardenTopAppBar(
+                    title = stringResource(id = R.string.scan_qr_code),
+                    navigationIcon = rememberVectorPainter(id = R.drawable.ic_close),
+                    navigationIconContentDescription = stringResource(id = R.string.close),
+                    onNavigationIconClick = remember(viewModel) {
+                        { viewModel.trySendAction(QrCodeScanAction.CloseClick) }
+                    },
+                    scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
+                        state = rememberTopAppBarState(),
+                    ),
+                )
             },
-            qrCodeAnalyzer = qrCodeAnalyzer,
-            modifier = Modifier.padding(innerPadding),
-        )
+        ) { innerPadding ->
+            CameraPreview(
+                cameraErrorReceive = remember(viewModel) {
+                    { viewModel.trySendAction(QrCodeScanAction.CameraSetupErrorReceive) }
+                },
+                qrCodeAnalyzer = qrCodeAnalyzer,
+                modifier = Modifier.padding(innerPadding),
+            )
 
-        if (LocalConfiguration.current.isPortrait) {
-            PortraitQRCodeContent(
-                onEnterCodeManuallyClick = onEnterCodeManuallyClick,
-                modifier = Modifier.padding(innerPadding),
-            )
-        } else {
-            LandscapeQRCodeContent(
-                onEnterCodeManuallyClick = onEnterCodeManuallyClick,
-                modifier = Modifier.padding(innerPadding),
-            )
+            if (LocalConfiguration.current.isPortrait) {
+                PortraitQRCodeContent(
+                    onEnterCodeManuallyClick = onEnterCodeManuallyClick,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            } else {
+                LandscapeQRCodeContent(
+                    onEnterCodeManuallyClick = onEnterCodeManuallyClick,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
         }
     }
 }
@@ -161,7 +168,7 @@ private fun PortraitQRCodeContent(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxSize()
-                .background(color = Color.Black.copy(alpha = .4f))
+                .background(color = BitwardenTheme.colorScheme.background.scrim)
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
@@ -169,7 +176,7 @@ private fun PortraitQRCodeContent(
                 text = stringResource(id = R.string.point_your_camera_at_the_qr_code),
                 textAlign = TextAlign.Center,
                 color = Color.White,
-                style = MaterialTheme.typography.bodyMedium,
+                style = BitwardenTheme.typography.bodyMedium,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
 
@@ -201,7 +208,7 @@ private fun LandscapeQRCodeContent(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxSize()
-                .background(color = Color.Black.copy(alpha = .4f))
+                .background(color = BitwardenTheme.colorScheme.background.scrim)
                 .padding(horizontal = 16.dp)
                 .navigationBarsPadding()
                 .verticalScroll(rememberScrollState()),
@@ -210,7 +217,7 @@ private fun LandscapeQRCodeContent(
                 text = stringResource(id = R.string.point_your_camera_at_the_qr_code),
                 textAlign = TextAlign.Center,
                 color = Color.White,
-                style = MaterialTheme.typography.bodySmall,
+                style = BitwardenTheme.typography.bodySmall,
             )
 
             BottomClickableText(
@@ -310,7 +317,7 @@ private fun QrCodeSquare(
     modifier: Modifier = Modifier,
     squareOutlineSize: Dp,
 ) {
-    val color = MaterialTheme.colorScheme.primary
+    val color = BitwardenTheme.colorScheme.text.primary
 
     Box(
         contentAlignment = Alignment.Center,
@@ -318,8 +325,8 @@ private fun QrCodeSquare(
     ) {
         Canvas(
             modifier = Modifier
-                .size(squareOutlineSize)
-                .padding(8.dp),
+                .padding(8.dp)
+                .size(squareOutlineSize),
         ) {
             val strokeWidth = 3.dp.toPx()
 
@@ -412,11 +419,11 @@ private fun BottomClickableText(
             modifier = Modifier.padding(vertical = 4.dp),
             text = stringResource(id = R.string.cannot_scan_qr_code),
             color = Color.White,
-            style = MaterialTheme.typography.bodyMedium,
+            style = BitwardenTheme.typography.bodyMedium,
         )
         BitwardenClickableText(
             label = stringResource(id = R.string.enter_key_manually),
-            style = MaterialTheme.typography.labelLarge,
+            style = BitwardenTheme.typography.labelLarge,
             innerPadding = PaddingValues(vertical = 4.dp, horizontal = 12.dp),
             onClick = onEnterCodeManuallyClick,
         )

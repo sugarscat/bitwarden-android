@@ -108,10 +108,11 @@ fun NavGraphBuilder.authGraph(
         enterpriseSignOnDestination(
             onNavigateBack = { navController.popBackStack() },
             onNavigateToSetPassword = { navController.navigateToSetPassword() },
-            onNavigateToTwoFactorLogin = { emailAddress ->
+            onNavigateToTwoFactorLogin = { emailAddress, orgIdentifier ->
                 navController.navigateToTwoFactorLogin(
                     emailAddress = emailAddress,
-                    base64EncodedPassword = null,
+                    password = null,
+                    orgIdentifier = orgIdentifier,
                 )
             },
         )
@@ -154,7 +155,8 @@ fun NavGraphBuilder.authGraph(
             onNavigateToTwoFactorLogin = { emailAddress, password ->
                 navController.navigateToTwoFactorLogin(
                     emailAddress = emailAddress,
-                    base64EncodedPassword = password,
+                    password = password,
+                    orgIdentifier = null,
                 )
             },
         )
@@ -163,7 +165,8 @@ fun NavGraphBuilder.authGraph(
             onNavigateToTwoFactorLogin = {
                 navController.navigateToTwoFactorLogin(
                     emailAddress = it,
-                    base64EncodedPassword = null,
+                    password = null,
+                    orgIdentifier = null,
                 )
             },
         )

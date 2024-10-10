@@ -1,6 +1,5 @@
 package com.x8bit.bitwarden.data.auth.repository.model
 
-import com.x8bit.bitwarden.data.vault.datasource.network.model.SyncResponseJson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -47,7 +46,7 @@ sealed class PolicyInformation {
     /**
      * Represents a policy enforcing rules on the password generator.
      *
-     * @property defaultType The default type of password to be generated.
+     * @property overridePasswordType The default type of password to be generated.
      * @property minLength The minimum length of the password.
      * @property useUpper Whether the password requires upper case letters.
      * @property useLower Whether the password requires lower case letters.
@@ -61,8 +60,8 @@ sealed class PolicyInformation {
      */
     @Serializable
     data class PasswordGenerator(
-        @SerialName("defaultType")
-        val defaultType: String?,
+        @SerialName("overridePasswordType")
+        val overridePasswordType: String?,
 
         @SerialName("minLength")
         val minLength: Int?,

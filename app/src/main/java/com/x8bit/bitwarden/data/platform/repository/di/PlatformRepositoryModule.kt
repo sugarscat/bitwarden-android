@@ -2,6 +2,8 @@ package com.x8bit.bitwarden.data.platform.repository.di
 
 import android.view.autofill.AutofillManager
 import com.x8bit.bitwarden.data.auth.datasource.disk.AuthDiskSource
+import com.x8bit.bitwarden.data.auth.repository.AuthRepository
+import com.x8bit.bitwarden.data.autofill.accessibility.manager.AccessibilityEnabledManager
 import com.x8bit.bitwarden.data.autofill.manager.AutofillEnabledManager
 import com.x8bit.bitwarden.data.platform.datasource.disk.ConfigDiskSource
 import com.x8bit.bitwarden.data.platform.datasource.disk.EnvironmentDiskSource
@@ -11,6 +13,8 @@ import com.x8bit.bitwarden.data.platform.datasource.network.service.ConfigServic
 import com.x8bit.bitwarden.data.platform.manager.BiometricsEncryptionManager
 import com.x8bit.bitwarden.data.platform.manager.PolicyManager
 import com.x8bit.bitwarden.data.platform.manager.dispatcher.DispatcherManager
+import com.x8bit.bitwarden.data.platform.repository.AuthenticatorBridgeRepository
+import com.x8bit.bitwarden.data.platform.repository.AuthenticatorBridgeRepositoryImpl
 import com.x8bit.bitwarden.data.platform.repository.DebugMenuRepository
 import com.x8bit.bitwarden.data.platform.repository.DebugMenuRepositoryImpl
 import com.x8bit.bitwarden.data.platform.repository.EnvironmentRepository
@@ -19,7 +23,9 @@ import com.x8bit.bitwarden.data.platform.repository.ServerConfigRepository
 import com.x8bit.bitwarden.data.platform.repository.ServerConfigRepositoryImpl
 import com.x8bit.bitwarden.data.platform.repository.SettingsRepository
 import com.x8bit.bitwarden.data.platform.repository.SettingsRepositoryImpl
+import com.x8bit.bitwarden.data.vault.datasource.disk.VaultDiskSource
 import com.x8bit.bitwarden.data.vault.datasource.sdk.VaultSdkSource
+import com.x8bit.bitwarden.data.vault.repository.VaultRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,6 +39,24 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object PlatformRepositoryModule {
+
+    @Provides
+    @Singleton
+    fun providesAuthenticatorBridgeRepository(
+        authRepository: AuthRepository,
+        authDiskSource: AuthDiskSource,
+        vaultRepository: VaultRepository,
+        vaultDiskSource: VaultDiskSource,
+        vaultSdkSource: VaultSdkSource,
+        settingsDiskSource: SettingsDiskSource,
+    ): AuthenticatorBridgeRepository = AuthenticatorBridgeRepositoryImpl(
+        authRepository = authRepository,
+        authDiskSource = authDiskSource,
+        vaultRepository = vaultRepository,
+        vaultDiskSource = vaultDiskSource,
+        vaultSdkSource = vaultSdkSource,
+        settingsDiskSource = settingsDiskSource,
+    )
 
     @Provides
     @Singleton
@@ -71,6 +95,7 @@ object PlatformRepositoryModule {
         settingsDiskSource: SettingsDiskSource,
         vaultSdkSource: VaultSdkSource,
         encryptionManager: BiometricsEncryptionManager,
+        accessibilityEnabledManager: AccessibilityEnabledManager,
         dispatcherManager: DispatcherManager,
         policyManager: PolicyManager,
     ): SettingsRepository =
@@ -81,6 +106,7 @@ object PlatformRepositoryModule {
             settingsDiskSource = settingsDiskSource,
             vaultSdkSource = vaultSdkSource,
             biometricsEncryptionManager = encryptionManager,
+            accessibilityEnabledManager = accessibilityEnabledManager,
             dispatcherManager = dispatcherManager,
             policyManager = policyManager,
         )
@@ -90,8 +116,12 @@ object PlatformRepositoryModule {
     fun provideDebugMenuRepository(
         featureFlagOverrideDiskSource: FeatureFlagOverrideDiskSource,
         serverConfigRepository: ServerConfigRepository,
+        authDiskSource: AuthDiskSource,
+        settingsDiskSource: SettingsDiskSource,
     ): DebugMenuRepository = DebugMenuRepositoryImpl(
         featureFlagOverrideDiskSource = featureFlagOverrideDiskSource,
         serverConfigRepository = serverConfigRepository,
+        authDiskSource = authDiskSource,
+        settingsDiskSource = settingsDiskSource,
     )
 }

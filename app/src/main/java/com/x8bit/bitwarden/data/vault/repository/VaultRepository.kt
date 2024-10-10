@@ -24,6 +24,7 @@ import com.x8bit.bitwarden.data.vault.repository.model.ExportVaultDataResult
 import com.x8bit.bitwarden.data.vault.repository.model.GenerateTotpResult
 import com.x8bit.bitwarden.data.vault.repository.model.RemovePasswordSendResult
 import com.x8bit.bitwarden.data.vault.repository.model.SendData
+import com.x8bit.bitwarden.data.vault.repository.model.SyncVaultDataResult
 import com.x8bit.bitwarden.data.vault.repository.model.TotpCodeResult
 import com.x8bit.bitwarden.data.vault.repository.model.UpdateFolderResult
 import com.x8bit.bitwarden.data.vault.repository.model.UpdateSendResult
@@ -117,6 +118,12 @@ interface VaultRepository : CipherManager, VaultLockManager {
     fun syncIfNecessary()
 
     /**
+     * Syncs the user's FIDO 2 credentials. This is an explicit request to sync and is not dependent
+     * on whether the last sync time was sufficiently in the past.
+     */
+    suspend fun syncFido2Credentials(): SyncVaultDataResult
+
+    /**
      * Flow that represents the data for a specific vault item as found by ID. This may emit `null`
      * if the item cannot be found.
      */
@@ -166,6 +173,18 @@ interface VaultRepository : CipherManager, VaultLockManager {
      * Emits the totp code result flow to listeners.
      */
     fun emitTotpCodeResult(totpCodeResult: TotpCodeResult)
+
+    /**
+     * Attempt to unlock the vault using a user unlock key.
+     *
+     * @param userId ID of the user's vault to unlock.
+     * @param decryptedUserKey A decrypted unlock key for the user (ex: their authenticator
+     * sync unlock key)
+     */
+    suspend fun unlockVaultWithDecryptedUserKey(
+        userId: String,
+        decryptedUserKey: String,
+    ): VaultUnlockResult
 
     /**
      * Attempt to unlock the vault using the stored biometric key for the currently active user.

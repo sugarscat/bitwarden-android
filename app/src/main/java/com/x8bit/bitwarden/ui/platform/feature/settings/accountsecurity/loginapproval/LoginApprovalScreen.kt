@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -44,8 +43,7 @@ import com.x8bit.bitwarden.ui.platform.components.scaffold.BitwardenScaffold
 import com.x8bit.bitwarden.ui.platform.components.util.rememberVectorPainter
 import com.x8bit.bitwarden.ui.platform.composition.LocalExitManager
 import com.x8bit.bitwarden.ui.platform.manager.exit.ExitManager
-import com.x8bit.bitwarden.ui.platform.theme.LocalNonMaterialColors
-import com.x8bit.bitwarden.ui.platform.theme.LocalNonMaterialTypography
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Displays the login approval screen.
@@ -159,8 +157,8 @@ private fun LoginApprovalContent(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stringResource(id = R.string.are_you_trying_to_log_in),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.headlineMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
@@ -172,8 +170,8 @@ private fun LoginApprovalContent(
                 state.email,
                 state.domainUrl,
             ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -183,8 +181,8 @@ private fun LoginApprovalContent(
 
         Text(
             text = stringResource(id = R.string.fingerprint_phrase),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.titleLarge,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
@@ -194,8 +192,8 @@ private fun LoginApprovalContent(
         Text(
             text = state.fingerprint,
             textAlign = TextAlign.Start,
-            color = LocalNonMaterialColors.current.fingerprint,
-            style = LocalNonMaterialTypography.current.sensitiveInfoSmall,
+            color = BitwardenTheme.colorScheme.text.codePink,
+            style = BitwardenTheme.typography.sensitiveInfoSmall,
             modifier = Modifier
                 .testTag("FingerprintValueLabel")
                 .fillMaxWidth()
@@ -259,8 +257,8 @@ private fun LoginApprovalInfoColumn(
 
     Text(
         text = label,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = BitwardenTheme.typography.titleSmall,
+        color = BitwardenTheme.colorScheme.text.primary,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
@@ -270,8 +268,8 @@ private fun LoginApprovalInfoColumn(
 
     Text(
         text = value,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = BitwardenTheme.typography.bodyMedium,
+        color = BitwardenTheme.colorScheme.text.secondary,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)

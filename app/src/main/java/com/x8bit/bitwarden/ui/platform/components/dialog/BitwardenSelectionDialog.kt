@@ -1,17 +1,13 @@
 package com.x8bit.bitwarden.ui.platform.components.dialog
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,7 +24,9 @@ import androidx.compose.ui.window.Dialog
 import com.x8bit.bitwarden.R
 import com.x8bit.bitwarden.ui.platform.components.button.BitwardenTextButton
 import com.x8bit.bitwarden.ui.platform.components.dialog.row.BitwardenSelectionRow
+import com.x8bit.bitwarden.ui.platform.components.divider.BitwardenHorizontalDivider
 import com.x8bit.bitwarden.ui.platform.components.util.maxDialogHeight
+import com.x8bit.bitwarden.ui.platform.theme.BitwardenTheme
 
 /**
  * Displays a dialog with a title and "Cancel" button.
@@ -62,8 +60,8 @@ fun BitwardenSelectionDialog(
                 )
                 // This background is necessary for the dialog to not be transparent.
                 .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = RoundedCornerShape(28.dp),
+                    color = BitwardenTheme.colorScheme.background.primary,
+                    shape = BitwardenTheme.shapes.dialog,
                 ),
             horizontalAlignment = Alignment.End,
         ) {
@@ -73,16 +71,11 @@ fun BitwardenSelectionDialog(
                     .padding(24.dp)
                     .fillMaxWidth(),
                 text = title,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.headlineSmall,
+                color = BitwardenTheme.colorScheme.text.primary,
+                style = BitwardenTheme.typography.headlineSmall,
             )
             if (scrollState.canScrollBackward) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant),
-                )
+                BitwardenHorizontalDivider()
             }
             Column(
                 modifier = Modifier
@@ -91,12 +84,7 @@ fun BitwardenSelectionDialog(
                 content = selectionItems,
             )
             if (scrollState.canScrollForward) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant),
-                )
+                BitwardenHorizontalDivider()
             }
             BitwardenTextButton(
                 modifier = Modifier

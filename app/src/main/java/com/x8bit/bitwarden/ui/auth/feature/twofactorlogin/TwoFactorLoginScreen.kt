@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
@@ -224,8 +223,8 @@ private fun TwoFactorLoginScreenContent(
         Text(
             text = state.authMethod.description(state.displayEmail)(),
             textAlign = TextAlign.Start,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = BitwardenTheme.typography.bodyMedium,
+            color = BitwardenTheme.colorScheme.text.primary,
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .fillMaxWidth(),
@@ -302,25 +301,24 @@ private fun TwoFactorLoginScreenContent(
 @Preview(showBackground = true)
 private fun TwoFactorLoginScreenContentPreview() {
     BitwardenTheme {
-        BitwardenScaffold {
-            TwoFactorLoginScreenContent(
-                state = TwoFactorLoginState(
-                    TwoFactorAuthMethod.EMAIL,
-                    availableAuthMethods = listOf(TwoFactorAuthMethod.EMAIL),
-                    codeInput = "",
-                    dialogState = null,
-                    displayEmail = "email@dot.com",
-                    isContinueButtonEnabled = true,
-                    isRememberMeEnabled = true,
-                    captchaToken = null,
-                    email = "",
-                    password = "",
-                ),
-                onCodeInputChange = {},
-                onContinueButtonClick = {},
-                onRememberMeToggle = {},
-                onResendEmailButtonClick = {},
-            )
-        }
+        TwoFactorLoginScreenContent(
+            state = TwoFactorLoginState(
+                TwoFactorAuthMethod.EMAIL,
+                availableAuthMethods = listOf(TwoFactorAuthMethod.EMAIL),
+                codeInput = "",
+                dialogState = null,
+                displayEmail = "email@dot.com",
+                isContinueButtonEnabled = true,
+                isRememberMeEnabled = true,
+                captchaToken = null,
+                email = "",
+                password = "",
+                orgIdentifier = null,
+            ),
+            onCodeInputChange = {},
+            onContinueButtonClick = {},
+            onRememberMeToggle = {},
+            onResendEmailButtonClick = {},
+        )
     }
 }
